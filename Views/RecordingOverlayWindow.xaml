@@ -1,0 +1,53 @@
+<Window x:Class="DalVideo.Views.RecordingOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DalVideo Overlay"
+        Width="200" Height="40"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        MouseLeftButtonDown="OnDragMove">
+
+    <Border Background="#CC1E1E2E" CornerRadius="8" Padding="8,4" BorderBrush="#44FFFFFF" BorderThickness="1">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <!-- Red recording dot -->
+            <Ellipse Width="10" Height="10" Fill="#FFDC3545" Margin="0,0,6,0">
+                <Ellipse.Triggers>
+                    <EventTrigger RoutedEvent="Loaded">
+                        <BeginStoryboard>
+                            <Storyboard RepeatBehavior="Forever">
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="1" To="0.3" Duration="0:0:0.8"
+                                                 AutoReverse="True"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Ellipse.Triggers>
+            </Ellipse>
+
+            <!-- Elapsed time -->
+            <TextBlock x:Name="TimeText" Text="00:00:00"
+                       Foreground="#FF7CD4FD" FontSize="14" FontWeight="Bold"
+                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+            <!-- Stop button -->
+            <Button Content="■" FontSize="12" Width="24" Height="24"
+                    Background="#44FFFFFF" Foreground="#FFDC3545"
+                    BorderThickness="0" Cursor="Hand"
+                    Click="OnStopClick"
+                    ToolTip="녹화 중지">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="2">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </StackPanel>
+    </Border>
+</Window>

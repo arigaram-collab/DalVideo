@@ -1,0 +1,32 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## VS
+.vs/
+*.rsuser
+[Dd]ebug/
+[Rr]elease/
+
+## Build
+[Bb]uild[Ll]og.*
+*.log
+
+## OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+## Assets (large binaries)
+Assets/ffmpeg.exe
+
+## Claude Code
+.claude/
+
+## Misc
+nul
