@@ -30,14 +30,14 @@ PrivilegesRequiredOverridesAllowed=dialog
 Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 ; Main application files (self-contained publish output)
 Source: "..\bin\publish\installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; FFmpeg binary
-Source: "ffmpeg\ffmpeg.exe"; DestDir: "{app}\Assets"; Flags: ignoreversion; Check: FFmpegExists
+; FFmpeg binary (optional - place ffmpeg.exe in Installer\ffmpeg\ before building)
+Source: "ffmpeg\ffmpeg.exe"; DestDir: "{app}\Assets"; Flags: ignoreversion skipifsourcedoesntexist
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
