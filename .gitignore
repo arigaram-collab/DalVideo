@@ -25,6 +25,10 @@ Desktop.ini
 ## Assets (large binaries)
 Assets/ffmpeg.exe
 
+## Installer (large binaries)
+Installer/ffmpeg/
+Installer/Output/
+
 ## Claude Code
 .claude/
 

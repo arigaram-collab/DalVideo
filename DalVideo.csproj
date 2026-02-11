@@ -10,6 +10,7 @@
     <RootNamespace>DalVideo</RootNamespace>
     <AssemblyName>DalVideo</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
