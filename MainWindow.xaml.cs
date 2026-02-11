@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media.Imaging;
 using DalVideo.Interop;
 using DalVideo.Services;
 using DalVideo.ViewModels;
@@ -18,8 +19,32 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        SetWindowIcon();
         Loaded += OnLoaded;
         Closed += OnClosed;
+    }
+
+    private void SetWindowIcon()
+    {
+        try
+        {
+            var exePath = Environment.ProcessPath;
+            if (exePath != null)
+            {
+                var icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
+                if (icon != null)
+                {
+                    Icon = Imaging.CreateBitmapSourceFromHIcon(
+                        icon.Handle,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions());
+                }
+            }
+        }
+        catch
+        {
+            // Ignore icon loading errors
+        }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
