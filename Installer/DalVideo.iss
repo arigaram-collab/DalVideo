@@ -50,3 +50,37 @@ Type: filesandordirs; Name: "{localappdata}\DalVideo"
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} 실행"; Flags: nowait postinstall skipifsilent
 
+[Code]
+function GetUninstallString(): String;
+var
+  UninstallKey: String;
+  UninstallString: String;
+begin
+  Result := '';
+  UninstallKey := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1';
+  if RegQueryStringValue(HKCU, UninstallKey, 'UninstallString', UninstallString) then
+    Result := UninstallString
+  else if RegQueryStringValue(HKLM, UninstallKey, 'UninstallString', UninstallString) then
+    Result := UninstallString;
+end;
+
+function InitializeSetup(): Boolean;
+var
+  UninstallString: String;
+  ResultCode: Integer;
+begin
+  Result := True;
+  UninstallString := GetUninstallString();
+  if UninstallString <> '' then
+  begin
+    if MsgBox('DalVideo가 이미 설치되어 있습니다.' + #13#10 +
+              '기존 버전을 제거한 후 설치를 계속하시겠습니까?',
+              mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      Exec(RemoveQuotes(UninstallString), '/SILENT /NORESTART', '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
+    end
+    else
+      Result := False;
+  end;
+end;
+
