@@ -50,10 +50,3 @@ Type: filesandordirs; Name: "{localappdata}\DalVideo"
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} 실행"; Flags: nowait postinstall skipifsilent
 
-[Code]
-function FFmpegExists(): Boolean;
-begin
-  Result := FileExists(ExpandConstant('{src}\Installer\ffmpeg\ffmpeg.exe')) or
-            FileExists(ExpandConstant('{src}\ffmpeg\ffmpeg.exe')) or
-            FileExists('ffmpeg\ffmpeg.exe');
-end;
