@@ -11,6 +11,10 @@
     <AssemblyName>DalVideo</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Company>DalVideo</Company>
+    <Product>DalVideo</Product>
+    <Description>Windows 화면 녹화 프로그램</Description>
   </PropertyGroup>
 
   <ItemGroup>

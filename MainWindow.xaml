@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:DalVideo.ViewModels"
         mc:Ignorable="d"
+        Icon="Assets/app.ico"
         Title="DalVideo - 화면 녹화" Height="560" Width="520"
         ResizeMode="CanMinimize"
         WindowStartupLocation="CenterScreen"
