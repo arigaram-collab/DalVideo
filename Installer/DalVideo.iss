@@ -57,7 +57,7 @@ var
   UninstallString: String;
 begin
   Result := '';
-  UninstallKey := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1';
+  UninstallKey := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{B8A3D2F1-7C4E-4A9B-8D6F-1E2C3B4A5D6E}_is1';
   if RegQueryStringValue(HKCU, UninstallKey, 'UninstallString', UninstallString) then
     Result := UninstallString
   else if RegQueryStringValue(HKLM, UninstallKey, 'UninstallString', UninstallString) then
