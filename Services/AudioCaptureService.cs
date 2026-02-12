@@ -20,6 +20,14 @@ public sealed class AudioCaptureService : IDisposable
     private volatile bool _overflowWarned;
     private Stopwatch? _mixStopwatch;
 
+    // Minimum input bytes needed for one output chunk (calculated per source)
+    private int _loopbackMinInputBytes;
+    private int _micMinInputBytes;
+
+    private const float LoopbackGain = 1.5f;
+    private const float MicGain = 2.5f;
+    private const int WarmUpMs = 300;
+
     public WaveFormat OutputFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
 
     /// <summary>믹스된 오디오의 피크 레벨 (0.0~1.0). UI 레벨 미터용.</summary>
@@ -63,10 +71,11 @@ public sealed class AudioCaptureService : IDisposable
             {
                 _loopbackResampler = new MediaFoundationResampler(_loopbackBuffer, OutputFormat);
                 _loopbackResampler.ResamplerQuality = 60; // Max quality
+                _loopbackMinInputBytes = ComputeMinInputBytes(_loopbackCapture.WaveFormat);
             }
 
             _loopbackCapture.StartRecording();
-            AppLogger.Warn($"[Audio] Loopback format: {_loopbackCapture.WaveFormat}");
+            AppLogger.Info($"[Audio] Loopback format: {_loopbackCapture.WaveFormat}, minInput: {_loopbackMinInputBytes}");
         }
 
         if (captureMic)
@@ -109,10 +118,11 @@ public sealed class AudioCaptureService : IDisposable
                     {
                         _micResampler = new MediaFoundationResampler(_micBuffer, OutputFormat);
                         _micResampler.ResamplerQuality = 60;
+                        _micMinInputBytes = ComputeMinInputBytes(_micCapture.WaveFormat);
                     }
 
                     _micCapture.StartRecording();
-                    AppLogger.Warn($"[Audio] Mic format: {_micCapture.WaveFormat}");
+                    AppLogger.Info($"[Audio] Mic format: {_micCapture.WaveFormat}, minInput: {_micMinInputBytes}");
                 }
             }
             catch (Exception ex)
@@ -140,13 +150,20 @@ public sealed class AudioCaptureService : IDisposable
 
     private void MixAndWriteLoop()
     {
-        // ~10ms chunks at 48kHz stereo float32
-        const int chunkSamples = 48000 / 100; // 480 samples = 10ms
+        // ~20ms chunks at 48kHz stereo float32 (larger chunks reduce underrun frequency)
+        const int chunkSamples = 48000 / 50; // 960 samples = 20ms
         const int chunkBytes = chunkSamples * 2 * 4; // stereo, float32
-        const int chunksPerSecond = 100;
+        const int chunksPerSecond = 50;
         const int maxCatchUpChunks = 3;
         var outputBuffer = new byte[chunkBytes];
         var tempBuffer = new byte[chunkBytes];
+
+        // Warm-up: let capture devices stabilize before mixing
+        Thread.Sleep(WarmUpMs);
+        _loopbackBuffer?.ClearBuffer();
+        _micBuffer?.ClearBuffer();
+        AppLogger.Info($"[Audio] Warm-up complete ({WarmUpMs}ms), starting mixer");
+
         _mixStopwatch = Stopwatch.StartNew();
         long chunksWritten = 0;
 
@@ -199,39 +216,49 @@ public sealed class AudioCaptureService : IDisposable
 
         try
         {
-            if (_loopbackBuffer != null && _loopbackBuffer.BufferedBytes > 0)
+            // Read loopback audio (only when sufficient input data is available for resampler)
+            if (_loopbackBuffer != null)
             {
-                int read;
-                if (_loopbackResampler != null)
-                    read = _loopbackResampler.Read(tempBuffer, 0, tempBuffer.Length);
-                else
+                int minRequired = _loopbackResampler != null ? _loopbackMinInputBytes : tempBuffer.Length;
+                if (_loopbackBuffer.BufferedBytes >= minRequired)
                 {
-                    int available = Math.Min(_loopbackBuffer.BufferedBytes, tempBuffer.Length);
-                    read = _loopbackBuffer.Read(tempBuffer, 0, available);
-                }
+                    int read;
+                    if (_loopbackResampler != null)
+                        read = _loopbackResampler.Read(tempBuffer, 0, tempBuffer.Length);
+                    else
+                    {
+                        int available = Math.Min(_loopbackBuffer.BufferedBytes, tempBuffer.Length);
+                        read = _loopbackBuffer.Read(tempBuffer, 0, available);
+                    }
 
-                if (read > 0)
-                {
-                    MixInto(outputBuffer, tempBuffer, Math.Min(read, outputBuffer.Length));
-                    maxRead = Math.Max(maxRead, read);
+                    if (read > 0)
+                    {
+                        MixInto(outputBuffer, tempBuffer, Math.Min(read, outputBuffer.Length), LoopbackGain);
+                        maxRead = Math.Max(maxRead, read);
+                    }
                 }
             }
 
-            if (_micBuffer != null && _micBuffer.BufferedBytes > 0)
+            // Read mic audio (only when sufficient input data is available for resampler)
+            if (_micBuffer != null)
             {
-                int read;
-                if (_micResampler != null)
-                    read = _micResampler.Read(tempBuffer, 0, tempBuffer.Length);
-                else
+                int minRequired = _micResampler != null ? _micMinInputBytes : tempBuffer.Length;
+                if (_micBuffer.BufferedBytes >= minRequired)
                 {
-                    int available = Math.Min(_micBuffer.BufferedBytes, tempBuffer.Length);
-                    read = _micBuffer.Read(tempBuffer, 0, available);
-                }
+                    int read;
+                    if (_micResampler != null)
+                        read = _micResampler.Read(tempBuffer, 0, tempBuffer.Length);
+                    else
+                    {
+                        int available = Math.Min(_micBuffer.BufferedBytes, tempBuffer.Length);
+                        read = _micBuffer.Read(tempBuffer, 0, available);
+                    }
 
-                if (read > 0)
-                {
-                    MixInto(outputBuffer, tempBuffer, Math.Min(read, outputBuffer.Length));
-                    maxRead = Math.Max(maxRead, read);
+                    if (read > 0)
+                    {
+                        MixInto(outputBuffer, tempBuffer, Math.Min(read, outputBuffer.Length), MicGain);
+                        maxRead = Math.Max(maxRead, read);
+                    }
                 }
             }
         }
@@ -276,7 +303,7 @@ public sealed class AudioCaptureService : IDisposable
                a.BitsPerSample == b.BitsPerSample;
     }
 
-    private static unsafe void MixInto(byte[] dest, byte[] source, int byteCount)
+    private static unsafe void MixInto(byte[] dest, byte[] source, int byteCount, float gain)
     {
         int sampleCount = byteCount / 4;
         fixed (byte* pDest = dest, pSrc = source)
@@ -284,8 +311,20 @@ public sealed class AudioCaptureService : IDisposable
             var dstFloat = (float*)pDest;
             var srcFloat = (float*)pSrc;
             for (int i = 0; i < sampleCount; i++)
-                dstFloat[i] = Math.Clamp(dstFloat[i] + srcFloat[i], -1f, 1f);
+                dstFloat[i] = Math.Clamp(dstFloat[i] + srcFloat[i] * gain, -1f, 1f);
         }
+    }
+
+    /// <summary>
+    /// 리샘플러가 하나의 출력 청크를 생성하는 데 필요한 최소 입력 바이트를 계산합니다.
+    /// </summary>
+    private int ComputeMinInputBytes(WaveFormat inputFormat)
+    {
+        // Output chunk: 20ms at 48kHz stereo float32 = 960 samples * 2ch * 4bytes = 7680 bytes
+        const int outputChunkBytes = (48000 / 50) * 2 * 4;
+        double rateRatio = (double)inputFormat.SampleRate / OutputFormat.SampleRate;
+        double channelRatio = (double)inputFormat.Channels / OutputFormat.Channels;
+        return (int)(outputChunkBytes * rateRatio * channelRatio) + inputFormat.BlockAlign;
     }
 
     private static unsafe float ComputePeak(byte[] buffer, int byteCount)
