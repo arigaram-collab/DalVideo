@@ -165,6 +165,23 @@
                        HorizontalAlignment="Center"
                        Foreground="{StaticResource FgDim}"
                        Margin="0,2,0,0"/>
+            <TextBlock Text="{Binding FrameDropText}"
+                       FontSize="11"
+                       HorizontalAlignment="Center"
+                       Margin="0,2,0,0"
+                       Visibility="{Binding IsRecordingOrPaused, Converter={StaticResource BoolToVis}}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource FgDim}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FrameDropWarning}" Value="True">
+                                <Setter Property="Foreground" Value="#FFDC3545"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
         </StackPanel>
 
         <!-- 컨트롤 버튼 -->

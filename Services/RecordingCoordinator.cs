@@ -33,8 +33,17 @@ public sealed class RecordingCoordinator : IDisposable
     public string? LastOutputPath { get; private set; }
     public float AudioPeakLevel => _hasAudio ? _audioCapture.PeakLevel : 0f;
 
+    // Frame drop monitoring
+    private long _droppedFrames;
+    private bool _dropWarningFired;
+    public long DroppedFrames => _droppedFrames;
+    public long WrittenFrames => _frameCount;
+
     /// <summary>녹화 중 치명적 오류 발생 시 알림 (에러 메시지)</summary>
     public event Action<string>? RecordingError;
+
+    /// <summary>프레임 드롭률이 임계값(5%)을 초과했을 때 발생 (한 번만)</summary>
+    public event Action<double>? FrameDropWarning;
 
     public void StartRecording(RecordingSettings settings)
     {
@@ -46,6 +55,8 @@ public sealed class RecordingCoordinator : IDisposable
         _pumpFrameBuffer = new byte[canvasSize];
         _cropBuffer = null;
         _frameCount = 0;
+        _droppedFrames = 0;
+        _dropWarningFired = false;
         _fpsStopwatch = Stopwatch.StartNew();
 
         // Generate output filename
@@ -228,11 +239,25 @@ public sealed class RecordingCoordinator : IDisposable
 
                 var expectedFrames = (long)(_fpsStopwatch!.Elapsed.TotalSeconds * _settings!.FrameRate);
 
-                // Prevent burst: if too far behind, skip ahead
+                // Prevent burst: if too far behind, skip ahead (= frame drop)
                 if (expectedFrames - _frameCount > maxBurstFrames)
                 {
-                    AppLogger.Warn($"[FramePump] Skipping {expectedFrames - _frameCount - maxBurstFrames} frames to prevent burst");
+                    long skipped = expectedFrames - _frameCount - maxBurstFrames;
+                    _droppedFrames += skipped;
+                    AppLogger.Warn($"[FramePump] Dropped {skipped} frames (total: {_droppedFrames})");
                     _frameCount = expectedFrames - maxBurstFrames;
+
+                    // Fire warning once when drop rate exceeds 5%
+                    long total = _frameCount + _droppedFrames;
+                    if (!_dropWarningFired && total > 0)
+                    {
+                        double rate = (double)_droppedFrames / total * 100;
+                        if (rate >= 5.0)
+                        {
+                            _dropWarningFired = true;
+                            FrameDropWarning?.Invoke(rate);
+                        }
+                    }
                 }
 
                 if (_frameCount < expectedFrames)

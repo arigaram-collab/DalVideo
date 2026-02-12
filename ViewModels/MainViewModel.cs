@@ -31,6 +31,12 @@ public partial class MainViewModel : ObservableObject
     private double _audioLevel;
 
     [ObservableProperty]
+    private string _frameDropText = "";
+
+    [ObservableProperty]
+    private bool _frameDropWarning;
+
+    [ObservableProperty]
     private string _selectedCaptureMode = "전체 화면";
 
     [ObservableProperty]
@@ -89,6 +95,7 @@ public partial class MainViewModel : ObservableObject
         {
             ElapsedTimeText = _elapsedStopwatch.Elapsed.ToString(@"hh\:mm\:ss");
             AudioLevel = _coordinator.AudioPeakLevel;
+            UpdateFrameDropStats();
         };
 
         _windowRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -104,6 +111,15 @@ public partial class MainViewModel : ObservableObject
             {
                 StatusText = string.Format(Strings.Error_Recording, msg);
                 _ = StopRecording();
+            });
+        };
+
+        _coordinator.FrameDropWarning += rate =>
+        {
+            Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                FrameDropWarning = true;
+                AppLogger.Warn($"[Recording] Frame drop rate {rate:F1}% exceeded threshold");
             });
         };
 
@@ -342,6 +358,8 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             AudioLevel = 0;
+            FrameDropText = "";
+            FrameDropWarning = false;
             State = RecordingState.Idle;
         }
     }
@@ -361,6 +379,20 @@ public partial class MainViewModel : ObservableObject
             _elapsedStopwatch.Start();
             State = RecordingState.Recording;
         }
+    }
+
+    private void UpdateFrameDropStats()
+    {
+        long dropped = _coordinator.DroppedFrames;
+        long written = _coordinator.WrittenFrames;
+        long total = dropped + written;
+        if (total <= 0)
+        {
+            FrameDropText = "";
+            return;
+        }
+        double rate = (double)dropped / total * 100;
+        FrameDropText = $"Drop: {dropped} ({rate:F1}%)";
     }
 
     [RelayCommand]
