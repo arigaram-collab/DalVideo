@@ -6,15 +6,29 @@ namespace DalVideo.Views;
 public partial class RecordingOverlayWindow : Window
 {
     public event Action? StopRequested;
+    private readonly Rect? _monitorBounds;
 
-    public RecordingOverlayWindow()
+    public RecordingOverlayWindow(Rect? monitorBounds = null)
     {
         InitializeComponent();
+        _monitorBounds = monitorBounds;
+        Loaded += OnLoaded;
+    }
 
-        // Position at top-right of primary screen
-        var workArea = SystemParameters.WorkArea;
-        Left = workArea.Right - Width - 16;
-        Top = workArea.Top + 16;
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        // Position at top-right of the recording target's monitor
+        if (_monitorBounds is { } bounds)
+        {
+            Left = bounds.Right - ActualWidth - 16;
+            Top = bounds.Top + 16;
+        }
+        else
+        {
+            var workArea = SystemParameters.WorkArea;
+            Left = workArea.Right - ActualWidth - 16;
+            Top = workArea.Top + 16;
+        }
     }
 
     public void UpdateTime(string elapsed)

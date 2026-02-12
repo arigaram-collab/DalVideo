@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:DalVideo.ViewModels"
         mc:Ignorable="d"
-        Title="DalVideo - 화면 녹화" Height="560" Width="520"
+        Title="DalVideo - 화면 녹화"
+        SizeToContent="WidthAndHeight" MinWidth="500"
         ResizeMode="CanMinimize"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource WindowBg}"
@@ -23,7 +24,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -37,18 +38,23 @@
                               ItemsSource="{Binding CaptureModes}"
                               SelectedItem="{Binding SelectedCaptureMode}"
                               IsEnabled="{Binding IsIdle}"
+                              TabIndex="0"
+                              AutomationProperties.Name="캡처 모드"
                               ToolTip="전체 화면, 특정 창, 또는 화면 영역을 선택합니다"/>
                     <Button Content="대상 변경" Margin="8,0,0,0"
                             Width="80"
                             Style="{StaticResource DarkButton}"
                             Command="{Binding ChangeCaptureTargetCommand}"
-                            Visibility="{Binding IsRecording, Converter={StaticResource BoolToVis}}"/>
+                            Visibility="{Binding IsRecording, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.Name="녹화 대상 변경"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                     <TextBlock Text="창:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <ComboBox Width="300"
                               ItemsSource="{Binding AvailableWindows}"
-                              SelectedItem="{Binding SelectedWindow}">
+                              SelectedItem="{Binding SelectedWindow}"
+                              TabIndex="1"
+                              AutomationProperties.Name="녹화할 창 선택">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Title}"/>
@@ -69,10 +75,14 @@
                           IsChecked="{Binding CaptureSystemAudio}"
                           IsEnabled="{Binding IsIdle}"
                           Margin="0,0,20,0"
+                          TabIndex="2"
+                          AutomationProperties.Name="시스템 오디오 녹음"
                           ToolTip="컴퓨터에서 재생되는 소리를 함께 녹음합니다"/>
                 <CheckBox Content="마이크"
                           IsChecked="{Binding CaptureMicrophone}"
                           IsEnabled="{Binding IsIdle}"
+                          TabIndex="3"
+                          AutomationProperties.Name="마이크 녹음"
                           ToolTip="마이크 입력을 함께 녹음합니다"/>
             </StackPanel>
         </GroupBox>
@@ -86,17 +96,23 @@
                               ItemsSource="{Binding FrameRates}"
                               SelectedItem="{Binding FrameRate}"
                               IsEnabled="{Binding IsIdle}"
+                              TabIndex="4"
+                              AutomationProperties.Name="초당 프레임 수"
                               ToolTip="초당 프레임 수. 높을수록 부드럽지만 파일이 커집니다"/>
                     <TextBlock Text="화질:" VerticalAlignment="Center" Margin="16,0,8,0" FontWeight="SemiBold"/>
                     <ComboBox Width="80"
                               ItemsSource="{Binding QualityPresets}"
                               SelectedItem="{Binding SelectedQuality}"
                               IsEnabled="{Binding IsIdle}"
+                              TabIndex="5"
+                              AutomationProperties.Name="화질 설정"
                               ToolTip="고품질: 큰 파일, 표준: 적절한 크기, 소형: 작은 파일"/>
                     <CheckBox Content="카운트다운"
                               IsChecked="{Binding UseCountdown}"
                               IsEnabled="{Binding IsIdle}"
                               Margin="16,0,0,0" VerticalAlignment="Center"
+                              TabIndex="6"
+                              AutomationProperties.Name="카운트다운 사용"
                               ToolTip="녹화 시작 전 3초 카운트다운을 표시합니다"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -118,13 +134,19 @@
                    Foreground="{StaticResource FgDim}" FontSize="11"/>
 
         <!-- 녹화 시간 -->
-        <TextBlock Grid.Row="4"
-                   Text="{Binding ElapsedTimeText}"
-                   FontSize="44"
-                   FontWeight="Bold"
-                   HorizontalAlignment="Center"
-                   Margin="0,6,0,6"
-                   Foreground="{StaticResource TimerBrush}"/>
+        <StackPanel Grid.Row="4" HorizontalAlignment="Center" Margin="0,6,0,6">
+            <TextBlock Text="{Binding ElapsedTimeText}"
+                       FontSize="44"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource TimerBrush}"
+                       AutomationProperties.Name="경과 시간"/>
+            <TextBlock Text="{Binding StatusText}"
+                       FontSize="12"
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource FgDim}"
+                       Margin="0,2,0,0"/>
+        </StackPanel>
 
         <!-- 컨트롤 버튼 -->
         <StackPanel Grid.Row="5" Orientation="Horizontal"
@@ -136,11 +158,15 @@
                     Margin="0,0,12,0"
                     Style="{StaticResource RecordButton}"
                     Command="{Binding StartRecordingCommand}"
+                    TabIndex="7"
+                    AutomationProperties.Name="녹화 시작"
                     ToolTip="화면 녹화를 시작합니다 (F8)"/>
             <Button Content="■ 녹화 중지"
                     Width="140" Height="44"
                     Style="{StaticResource StopButton}"
                     Command="{Binding StopRecordingCommand}"
+                    TabIndex="8"
+                    AutomationProperties.Name="녹화 중지"
                     ToolTip="녹화를 중지하고 파일을 저장합니다 (F8)"/>
         </StackPanel>
 

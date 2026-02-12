@@ -97,15 +97,37 @@ public partial class MainWindow : Window
     private void ShowOverlay()
     {
         if (_overlay != null) return;
-        _overlay = new RecordingOverlayWindow();
+
+        Rect? monitorBounds = null;
+        if (DataContext is MainViewModel vm)
+            monitorBounds = GetRecordingMonitorBounds(vm);
+
+        _overlay = new RecordingOverlayWindow(monitorBounds);
         _overlay.StopRequested += async () =>
         {
             Show();
             Activate();
-            if (DataContext is MainViewModel vm && vm.StopRecordingCommand.CanExecute(null))
-                await vm.StopRecordingCommand.ExecuteAsync(null);
+            if (DataContext is MainViewModel v && v.StopRecordingCommand.CanExecute(null))
+                await v.StopRecordingCommand.ExecuteAsync(null);
         };
         _overlay.Show();
+    }
+
+    private static Rect? GetRecordingMonitorBounds(MainViewModel vm)
+    {
+        try
+        {
+            return vm.SelectedCaptureMode switch
+            {
+                "창 선택" when vm.SelectedWindow != null =>
+                    WindowEnumerationService.GetMonitorForWindow(vm.SelectedWindow.Handle).Bounds,
+                _ => WindowEnumerationService.GetMonitors().FirstOrDefault(m => m.IsPrimary)?.Bounds
+            };
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void CloseOverlay()

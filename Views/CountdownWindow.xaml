@@ -8,22 +8,24 @@
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
-        WindowState="Maximized"
-        KeyDown="OnKeyDown">
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterScreen"
+        KeyDown="OnKeyDown"
+        AutomationProperties.Name="녹화 카운트다운">
 
-    <Grid Background="#88000000">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+    <Border Background="#DD1E1E2E" CornerRadius="20" Padding="50,24"
+            BorderBrush="#44FFFFFF" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="40" ShadowDepth="4" Opacity="0.6"/>
+        </Border.Effect>
+        <StackPanel HorizontalAlignment="Center">
             <TextBlock x:Name="CountdownText" Text="3"
-                       FontSize="160" FontWeight="Bold"
+                       FontSize="120" FontWeight="Bold"
                        Foreground="White"
                        HorizontalAlignment="Center"
-                       Opacity="1">
-                <TextBlock.Effect>
-                    <DropShadowEffect Color="Black" BlurRadius="30" ShadowDepth="0"/>
-                </TextBlock.Effect>
-            </TextBlock>
-            <TextBlock Text="ESC: 취소" FontSize="14" Foreground="#99FFFFFF"
-                       HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                       Opacity="1"/>
+            <TextBlock Text="ESC: 취소" FontSize="13" Foreground="#99FFFFFF"
+                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
         </StackPanel>
-    </Grid>
+    </Border>
 </Window>
