@@ -191,13 +191,20 @@ public sealed class RecordingCoordinator : IDisposable
 
     private void FramePumpLoop()
     {
+        const int maxBurstFrames = 2;
+
         try
         {
-            var frameDuration = TimeSpan.FromSeconds(1.0 / _settings!.FrameRate);
-
             while (_isRecording)
             {
-                var expectedFrames = (long)(_fpsStopwatch!.Elapsed.TotalSeconds * _settings.FrameRate);
+                var expectedFrames = (long)(_fpsStopwatch!.Elapsed.TotalSeconds * _settings!.FrameRate);
+
+                // Prevent burst: if too far behind, skip ahead
+                if (expectedFrames - _frameCount > maxBurstFrames)
+                {
+                    Debug.WriteLine($"[FramePump] Skipping {expectedFrames - _frameCount - maxBurstFrames} frames to prevent burst");
+                    _frameCount = expectedFrames - maxBurstFrames;
+                }
 
                 if (_frameCount < expectedFrames)
                 {

@@ -129,39 +129,43 @@ public sealed class AudioCaptureService : IDisposable
 
     private void MixAndWriteLoop()
     {
-        // ~10ms chunks at 48kHz stereo float32 (smaller = lower latency, more responsive)
+        // ~10ms chunks at 48kHz stereo float32
         const int chunkSamples = 48000 / 100; // 480 samples = 10ms
         const int chunkBytes = chunkSamples * 2 * 4; // stereo, float32
+        const int chunksPerSecond = 100;
+        const int maxCatchUpChunks = 3;
         var outputBuffer = new byte[chunkBytes];
         var tempBuffer = new byte[chunkBytes];
         var sw = Stopwatch.StartNew();
-        long totalBytesWritten = 0;
+        long chunksWritten = 0;
 
         while (_isCapturing)
         {
-            // Calculate how many bytes we should have written by now
-            double elapsedSec = sw.Elapsed.TotalSeconds;
-            long expectedBytes = (long)(elapsedSec * 48000 * 2 * 4);
-            // Align to chunk boundary
-            expectedBytes = (expectedBytes / chunkBytes) * chunkBytes;
+            // Chunk count based pacing (avoids byte-level truncation drift)
+            long expectedChunks = (long)(sw.Elapsed.TotalSeconds * chunksPerSecond);
 
-            if (totalBytesWritten < expectedBytes)
+            if (chunksWritten < expectedChunks)
             {
-                // We need to write a chunk to keep in sync
-                int bytesWritten = MixOneChunk(outputBuffer, tempBuffer);
+                MixOneChunk(outputBuffer, tempBuffer);
                 try
                 {
                     _waveWriter?.Write(outputBuffer, 0, chunkBytes);
-                    totalBytesWritten += chunkBytes;
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[Audio] WAV write error: {ex.Message}");
                 }
+                chunksWritten++;
+
+                // Prevent burst: if too far behind, skip ahead
+                if (expectedChunks - chunksWritten > maxCatchUpChunks)
+                {
+                    Debug.WriteLine($"[Audio] Skipping {expectedChunks - chunksWritten - 1} chunks to prevent burst");
+                    chunksWritten = expectedChunks - 1;
+                }
             }
             else
             {
-                // We're caught up, sleep briefly
                 Thread.Sleep(2);
             }
         }
