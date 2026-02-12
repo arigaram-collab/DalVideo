@@ -88,6 +88,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>View에서 카운트다운 다이얼로그를 표시하는 델리게이트. 완료 시 true, 취소 시 false.</summary>
     public Func<bool>? ShowCountdown { get; set; }
 
+    /// <summary>View에서 녹화 완료 후 미리보기를 표시하는 델리게이트. 파일 경로를 전달.</summary>
+    public Action<string>? ShowPreviewHandler { get; set; }
+
     public MainViewModel()
     {
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
@@ -350,19 +353,31 @@ public partial class MainViewModel : ObservableObject
         try
         {
             await _coordinator.StopRecordingAsync();
-            StatusText = string.Format(Strings.Info_SaveComplete, _coordinator.LastOutputPath);
+            var outputPath = _coordinator.LastOutputPath;
+            StatusText = string.Format(Strings.Info_SaveComplete, outputPath);
+
+            // Show preview after state is reset to Idle
+            var previewPath = !string.IsNullOrEmpty(outputPath) && File.Exists(outputPath)
+                ? outputPath : null;
+
+            AudioLevel = 0;
+            FrameDropText = "";
+            FrameDropWarning = false;
+            State = RecordingState.Idle;
+
+            if (previewPath != null)
+                ShowPreviewHandler?.Invoke(previewPath);
+            return;
         }
         catch (Exception ex)
         {
             StatusText = string.Format(Strings.Error_RecordingStop, ex.Message);
         }
-        finally
-        {
-            AudioLevel = 0;
-            FrameDropText = "";
-            FrameDropWarning = false;
-            State = RecordingState.Idle;
-        }
+
+        AudioLevel = 0;
+        FrameDropText = "";
+        FrameDropWarning = false;
+        State = RecordingState.Idle;
     }
 
     [RelayCommand(CanExecute = nameof(IsRecordingOrPaused))]

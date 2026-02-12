@@ -84,6 +84,12 @@ public partial class MainWindow : Window
                 countdown.ShowDialog();
                 return countdown.Completed;
             };
+            vm.ShowPreviewHandler = filePath =>
+            {
+                var preview = new PreviewWindow(filePath);
+                preview.Owner = this;
+                preview.ShowDialog();
+            };
         }
     }
 

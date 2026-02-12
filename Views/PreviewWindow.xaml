@@ -1,0 +1,61 @@
+<Window x:Class="DalVideo.Views.PreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:props="clr-namespace:DalVideo.Properties"
+        Title="{x:Static props:Strings.PreviewWindowTitle}"
+        Width="800" Height="520"
+        MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBg}"
+        Foreground="{StaticResource FgBrush}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Video player -->
+        <Border Grid.Row="0" Background="Black">
+            <MediaElement x:Name="Player"
+                          LoadedBehavior="Manual" UnloadedBehavior="Close"
+                          Stretch="Uniform"/>
+        </Border>
+
+        <!-- Transport controls -->
+        <Grid Grid.Row="1" Margin="12,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="PlayPauseBtn" Content="❚❚" Width="40" Height="32"
+                    Style="{StaticResource DarkButton}"
+                    Click="OnPlayPauseClick"/>
+            <Slider x:Name="TimeSlider" Grid.Column="1" Margin="12,0"
+                    VerticalAlignment="Center" Minimum="0" Maximum="100"
+                    IsMoveToPointEnabled="True"/>
+            <TextBlock x:Name="TimeText" Grid.Column="2" VerticalAlignment="Center"
+                       Foreground="{StaticResource FgDim}" FontSize="12"/>
+        </Grid>
+
+        <!-- Bottom bar -->
+        <Border Grid.Row="2" Background="{StaticResource StatusBarBg}" Padding="12,8">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="{x:Static props:Strings.OpenFolderButton}"
+                            Style="{StaticResource DarkButton}"
+                            Click="OnOpenFolderClick"
+                            FontSize="11" Padding="10,3" Margin="0,0,8,0"/>
+                    <Button Content="{x:Static props:Strings.CloseButton}"
+                            Style="{StaticResource DarkButton}"
+                            Click="OnCloseClick"
+                            FontSize="11" Padding="10,3"/>
+                </StackPanel>
+                <TextBlock x:Name="FileInfoText" VerticalAlignment="Center"
+                           Foreground="{StaticResource FgDim}" FontSize="12"
+                           TextTrimming="CharacterEllipsis"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

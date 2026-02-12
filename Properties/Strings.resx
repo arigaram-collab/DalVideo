@@ -212,6 +212,14 @@ Assets 폴더에 ffmpeg.exe를 배치하거나 PATH에 추가해 주세요.</val
     <value>녹화 파일 저장 위치 선택</value>
   </data>
 
+  <!-- ═══ Preview Window ═══ -->
+  <data name="PreviewWindowTitle" xml:space="preserve">
+    <value>녹화 미리보기</value>
+  </data>
+  <data name="CloseButton" xml:space="preserve">
+    <value>닫기</value>
+  </data>
+
   <!-- ═══ Countdown Window ═══ -->
   <data name="CountdownCancel" xml:space="preserve">
     <value>ESC: 취소</value>

@@ -84,6 +84,10 @@ public static class Strings
     public static string Info_TargetChanged => GetString(nameof(Info_TargetChanged));
     public static string FolderBrowserDescription => GetString(nameof(FolderBrowserDescription));
 
+    // ═══ Preview Window ═══
+    public static string PreviewWindowTitle => GetString(nameof(PreviewWindowTitle));
+    public static string CloseButton => GetString(nameof(CloseButton));
+
     // ═══ Countdown Window ═══
     public static string CountdownCancel => GetString(nameof(CountdownCancel));
 
