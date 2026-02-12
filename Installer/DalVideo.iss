@@ -36,8 +36,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 ; Main application files (self-contained publish output)
 Source: "..\bin\publish\installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; FFmpeg binary (optional - place ffmpeg.exe in Installer\ffmpeg\ before building)
-Source: "ffmpeg\ffmpeg.exe"; DestDir: "{app}\Assets"; Flags: ignoreversion skipifsourcedoesntexist
+; FFmpeg binary - place ffmpeg.exe in Installer\ffmpeg\ before building
+#ifexist "ffmpeg\ffmpeg.exe"
+Source: "ffmpeg\ffmpeg.exe"; DestDir: "{app}\Assets"; Flags: ignoreversion
+#else
+  #pragma message "WARNING: ffmpeg\ffmpeg.exe not found - installer will be built without FFmpeg"
+#endif
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -62,6 +66,19 @@ begin
     Result := UninstallString
   else if RegQueryStringValue(HKLM, UninstallKey, 'UninstallString', UninstallString) then
     Result := UninstallString;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    if not FileExists(ExpandConstant('{app}\Assets\ffmpeg.exe')) then
+      MsgBox('FFmpeg가 포함되지 않았습니다.' + #13#10 +
+             'DalVideo 사용을 위해 ffmpeg.exe를 설치해 주세요:' + #13#10#13#10 +
+             '1. winget install Gyan.FFmpeg' + #13#10 +
+             '2. 또는 ffmpeg.exe를 설치 폴더의 Assets 디렉토리에 복사',
+             mbInformation, MB_OK);
+  end;
 end;
 
 function InitializeSetup(): Boolean;

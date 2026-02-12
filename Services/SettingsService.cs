@@ -18,19 +18,26 @@ public static class SettingsService
 
     public static AppSettings Load()
     {
+        AppSettings settings;
         try
         {
             if (File.Exists(SettingsPath))
             {
                 var json = File.ReadAllText(SettingsPath);
-                return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+                settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+            }
+            else
+            {
+                settings = new AppSettings();
             }
         }
         catch (Exception ex)
         {
             AppLogger.Error("[Settings] Load failed", ex);
+            settings = new AppSettings();
         }
-        return new AppSettings();
+        settings.Validate();
+        return settings;
     }
 
     public static void Save(AppSettings settings)
