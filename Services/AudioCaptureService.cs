@@ -345,13 +345,33 @@ public sealed class AudioCaptureService : IDisposable
 
     public void StopCapture()
     {
+        // 1. 캡처 장치 녹음 중지
         _loopbackCapture?.StopRecording();
         _micCapture?.StopRecording();
 
+        // 2. 믹스 스레드 종료 대기
         _isCapturing = false;
         PeakLevel = 0;
         _mixThread?.Join(timeout: TimeSpan.FromSeconds(5));
+        _mixThread = null;
 
+        // 3. 리샘플러 해제 (COM/MFT 리소스 - 버퍼보다 먼저 해제)
+        _loopbackResampler?.Dispose();
+        _loopbackResampler = null;
+        _micResampler?.Dispose();
+        _micResampler = null;
+
+        // 4. 캡처 장치 해제 (WASAPI COM 리소스)
+        _loopbackCapture?.Dispose();
+        _loopbackCapture = null;
+        _micCapture?.Dispose();
+        _micCapture = null;
+
+        // 5. 버퍼 참조 해제
+        _loopbackBuffer = null;
+        _micBuffer = null;
+
+        // 6. WAV 파일 닫기
         _waveWriter?.Flush();
         _waveWriter?.Dispose();
         _waveWriter = null;
@@ -360,9 +380,5 @@ public sealed class AudioCaptureService : IDisposable
     public void Dispose()
     {
         StopCapture();
-        _loopbackResampler?.Dispose();
-        _micResampler?.Dispose();
-        _loopbackCapture?.Dispose();
-        _micCapture?.Dispose();
     }
 }
