@@ -19,7 +19,7 @@ public partial class MainViewModel : ObservableObject
     private readonly DispatcherTimer _timer;
     private readonly DispatcherTimer _windowRefreshTimer;
     private readonly RecordingCoordinator _coordinator = new();
-    private DateTime _recordingStartTime;
+    private readonly Stopwatch _elapsedStopwatch = new();
 
     [ObservableProperty]
     private RecordingState _state = RecordingState.Idle;
@@ -84,8 +84,7 @@ public partial class MainViewModel : ObservableObject
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _timer.Tick += (_, _) =>
         {
-            var elapsed = DateTime.Now - _recordingStartTime;
-            ElapsedTimeText = elapsed.ToString(@"hh\:mm\:ss");
+            ElapsedTimeText = _elapsedStopwatch.Elapsed.ToString(@"hh\:mm\:ss");
         };
 
         _windowRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -157,19 +156,27 @@ public partial class MainViewModel : ObservableObject
 
     public bool IsIdle => State == RecordingState.Idle;
     public bool IsRecording => State == RecordingState.Recording;
+    public bool IsPaused => State == RecordingState.Paused;
+    public bool IsRecordingOrPaused => State is RecordingState.Recording or RecordingState.Paused;
+    public string PauseButtonText => IsPaused ? Strings.ResumeRecordingButton : Strings.PauseRecordingButton;
 
     partial void OnStateChanged(RecordingState value)
     {
         OnPropertyChanged(nameof(IsIdle));
         OnPropertyChanged(nameof(IsRecording));
+        OnPropertyChanged(nameof(IsPaused));
+        OnPropertyChanged(nameof(IsRecordingOrPaused));
+        OnPropertyChanged(nameof(PauseButtonText));
         StartRecordingCommand.NotifyCanExecuteChanged();
         StopRecordingCommand.NotifyCanExecuteChanged();
+        TogglePauseCommand.NotifyCanExecuteChanged();
         ChangeCaptureTargetCommand.NotifyCanExecuteChanged();
 
         StatusText = value switch
         {
             RecordingState.Idle => Strings.StatusIdle,
             RecordingState.Recording => Strings.StatusRecording,
+            RecordingState.Paused => Strings.StatusPaused,
             RecordingState.Stopping => Strings.StatusStopping,
             _ => StatusText
         };
@@ -299,7 +306,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             State = RecordingState.Recording;
-            _recordingStartTime = DateTime.Now;
+            _elapsedStopwatch.Restart();
             _timer.Start();
             _coordinator.StartRecording(settings);
         }
@@ -312,10 +319,11 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(IsRecording))]
+    [RelayCommand(CanExecute = nameof(IsRecordingOrPaused))]
     private async Task StopRecording()
     {
         State = RecordingState.Stopping;
+        _elapsedStopwatch.Stop();
         _timer.Stop();
 
         try
@@ -330,6 +338,23 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             State = RecordingState.Idle;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsRecordingOrPaused))]
+    private void TogglePause()
+    {
+        if (State == RecordingState.Recording)
+        {
+            _coordinator.PauseRecording();
+            _elapsedStopwatch.Stop();
+            State = RecordingState.Paused;
+        }
+        else if (State == RecordingState.Paused)
+        {
+            _coordinator.ResumeRecording();
+            _elapsedStopwatch.Start();
+            State = RecordingState.Recording;
         }
     }
 

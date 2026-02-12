@@ -23,6 +23,7 @@ public sealed class RecordingCoordinator : IDisposable
     private CaptureTarget? _currentTarget;
     private Rect _monitorBounds;
     private bool _isRecording;
+    private volatile bool _isPaused;
 
     private string? _tempVideoPath;
     private string? _tempAudioPath;
@@ -98,9 +99,30 @@ public sealed class RecordingCoordinator : IDisposable
         pumpThread.Start();
     }
 
+    public void PauseRecording()
+    {
+        if (!_isRecording || _isPaused) return;
+        _isPaused = true;
+        _fpsStopwatch?.Stop();
+        if (_hasAudio) _audioCapture.PauseCapture();
+        State = RecordingState.Paused;
+        AppLogger.Info("[Coordinator] Recording paused");
+    }
+
+    public void ResumeRecording()
+    {
+        if (!_isRecording || !_isPaused) return;
+        _isPaused = false;
+        _fpsStopwatch?.Start();
+        if (_hasAudio) _audioCapture.ResumeCapture();
+        State = RecordingState.Recording;
+        AppLogger.Info("[Coordinator] Recording resumed");
+    }
+
     public async Task StopRecordingAsync()
     {
         State = RecordingState.Stopping;
+        _isPaused = false;
         _isRecording = false;
 
         _screenCapture.FrameArrived -= OnFrameArrived;
@@ -197,6 +219,12 @@ public sealed class RecordingCoordinator : IDisposable
         {
             while (_isRecording)
             {
+                if (_isPaused)
+                {
+                    Thread.Sleep(10);
+                    continue;
+                }
+
                 var expectedFrames = (long)(_fpsStopwatch!.Elapsed.TotalSeconds * _settings!.FrameRate);
 
                 // Prevent burst: if too far behind, skip ahead

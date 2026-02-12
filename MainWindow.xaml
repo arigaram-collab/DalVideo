@@ -173,11 +173,19 @@
                     TabIndex="7"
                     AutomationProperties.Name="{x:Static props:Strings.Access_StartRecording}"
                     ToolTip="{x:Static props:Strings.Tooltip_StartRecording}"/>
+            <Button Content="{Binding PauseButtonText}"
+                    Width="100" Height="44"
+                    Margin="0,0,12,0"
+                    Style="{StaticResource DarkButton}"
+                    Command="{Binding TogglePauseCommand}"
+                    TabIndex="8"
+                    AutomationProperties.Name="{x:Static props:Strings.Access_PauseRecording}"
+                    ToolTip="{x:Static props:Strings.Tooltip_PauseRecording}"/>
             <Button Content="{x:Static props:Strings.StopRecordingButton}"
                     Width="140" Height="44"
                     Style="{StaticResource StopButton}"
                     Command="{Binding StopRecordingCommand}"
-                    TabIndex="8"
+                    TabIndex="9"
                     AutomationProperties.Name="{x:Static props:Strings.Access_StopRecording}"
                     ToolTip="{x:Static props:Strings.Tooltip_StopRecording}"/>
         </StackPanel>

@@ -16,7 +16,9 @@ public sealed class AudioCaptureService : IDisposable
     private WaveFileWriter? _waveWriter;
     private Thread? _mixThread;
     private volatile bool _isCapturing;
+    private volatile bool _isPaused;
     private volatile bool _overflowWarned;
+    private Stopwatch? _mixStopwatch;
 
     public WaveFormat OutputFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
 
@@ -142,13 +144,19 @@ public sealed class AudioCaptureService : IDisposable
         const int maxCatchUpChunks = 3;
         var outputBuffer = new byte[chunkBytes];
         var tempBuffer = new byte[chunkBytes];
-        var sw = Stopwatch.StartNew();
+        _mixStopwatch = Stopwatch.StartNew();
         long chunksWritten = 0;
 
         while (_isCapturing)
         {
+            if (_isPaused)
+            {
+                Thread.Sleep(10);
+                continue;
+            }
+
             // Chunk count based pacing (avoids byte-level truncation drift)
-            long expectedChunks = (long)(sw.Elapsed.TotalSeconds * chunksPerSecond);
+            long expectedChunks = (long)(_mixStopwatch.Elapsed.TotalSeconds * chunksPerSecond);
 
             if (chunksWritten < expectedChunks)
             {
@@ -274,6 +282,23 @@ public sealed class AudioCaptureService : IDisposable
             for (int i = 0; i < sampleCount; i++)
                 dstFloat[i] = Math.Clamp(dstFloat[i] + srcFloat[i], -1f, 1f);
         }
+    }
+
+    public void PauseCapture()
+    {
+        _isPaused = true;
+        _mixStopwatch?.Stop();
+        AppLogger.Info("[Audio] Capture paused");
+    }
+
+    public void ResumeCapture()
+    {
+        // Clear buffers to discard stale audio accumulated during pause
+        _loopbackBuffer?.ClearBuffer();
+        _micBuffer?.ClearBuffer();
+        _isPaused = false;
+        _mixStopwatch?.Start();
+        AppLogger.Info("[Audio] Capture resumed");
     }
 
     public void StopCapture()

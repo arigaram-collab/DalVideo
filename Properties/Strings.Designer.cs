@@ -46,6 +46,8 @@ public static class Strings
     public static string HotkeyHint => GetString(nameof(HotkeyHint));
     public static string StartRecordingButton => GetString(nameof(StartRecordingButton));
     public static string StopRecordingButton => GetString(nameof(StopRecordingButton));
+    public static string PauseRecordingButton => GetString(nameof(PauseRecordingButton));
+    public static string ResumeRecordingButton => GetString(nameof(ResumeRecordingButton));
     public static string OpenFolderButton => GetString(nameof(OpenFolderButton));
 
     // ═══ Tooltips ═══
@@ -56,12 +58,15 @@ public static class Strings
     public static string Tooltip_Quality => GetString(nameof(Tooltip_Quality));
     public static string Tooltip_Countdown => GetString(nameof(Tooltip_Countdown));
     public static string Tooltip_Encoder => GetString(nameof(Tooltip_Encoder));
+    public static string Tooltip_PauseRecording => GetString(nameof(Tooltip_PauseRecording));
+    public static string Tooltip_OverlayPause => GetString(nameof(Tooltip_OverlayPause));
     public static string Tooltip_StartRecording => GetString(nameof(Tooltip_StartRecording));
     public static string Tooltip_StopRecording => GetString(nameof(Tooltip_StopRecording));
     public static string Tooltip_OverlayStop => GetString(nameof(Tooltip_OverlayStop));
 
     // ═══ Status Messages ═══
     public static string StatusIdle => GetString(nameof(StatusIdle));
+    public static string StatusPaused => GetString(nameof(StatusPaused));
     public static string StatusRecording => GetString(nameof(StatusRecording));
     public static string StatusStopping => GetString(nameof(StatusStopping));
 
@@ -89,6 +94,7 @@ public static class Strings
     public static string Access_Quality => GetString(nameof(Access_Quality));
     public static string Access_Countdown => GetString(nameof(Access_Countdown));
     public static string Access_Encoder => GetString(nameof(Access_Encoder));
+    public static string Access_PauseRecording => GetString(nameof(Access_PauseRecording));
     public static string Access_StartRecording => GetString(nameof(Access_StartRecording));
     public static string Access_StopRecording => GetString(nameof(Access_StopRecording));
     public static string Access_ElapsedTime => GetString(nameof(Access_ElapsedTime));

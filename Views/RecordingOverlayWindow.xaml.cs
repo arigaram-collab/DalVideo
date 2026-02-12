@@ -6,6 +6,7 @@ namespace DalVideo.Views;
 public partial class RecordingOverlayWindow : Window
 {
     public event Action? StopRequested;
+    public event Action? PauseRequested;
     private readonly Rect? _monitorBounds;
 
     public RecordingOverlayWindow(Rect? monitorBounds = null)
@@ -34,6 +35,16 @@ public partial class RecordingOverlayWindow : Window
     public void UpdateTime(string elapsed)
     {
         TimeText.Text = elapsed;
+    }
+
+    public void UpdatePauseState(bool isPaused)
+    {
+        PauseButton.Content = isPaused ? "▶" : "❚❚";
+    }
+
+    private void OnPauseClick(object sender, RoutedEventArgs e)
+    {
+        PauseRequested?.Invoke();
     }
 
     private void OnStopClick(object sender, RoutedEventArgs e)

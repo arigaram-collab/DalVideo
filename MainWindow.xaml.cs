@@ -98,12 +98,16 @@ public partial class MainWindow : Window
         }
         else if (e.PropertyName is nameof(MainViewModel.IsRecording))
         {
-            _tray?.UpdateState(vm.IsRecording, vm.ElapsedTimeText);
+            _tray?.UpdateState(vm.IsRecordingOrPaused, vm.ElapsedTimeText);
 
-            if (vm.IsRecording && !IsVisible)
+            if (vm.IsRecordingOrPaused && !IsVisible)
                 ShowOverlay();
-            else
+            else if (!vm.IsRecordingOrPaused)
                 CloseOverlay();
+        }
+        else if (e.PropertyName is nameof(MainViewModel.IsPaused))
+        {
+            _overlay?.UpdatePauseState(vm.IsPaused);
         }
     }
 
@@ -122,6 +126,11 @@ public partial class MainWindow : Window
             Activate();
             if (DataContext is MainViewModel v && v.StopRecordingCommand.CanExecute(null))
                 await v.StopRecordingCommand.ExecuteAsync(null);
+        };
+        _overlay.PauseRequested += () =>
+        {
+            if (DataContext is MainViewModel v && v.TogglePauseCommand.CanExecute(null))
+                v.TogglePauseCommand.Execute(null);
         };
         _overlay.Show();
     }
@@ -189,7 +198,7 @@ public partial class MainWindow : Window
                 }
             }
         }
-        else if (vm.IsRecording)
+        else if (vm.IsRecordingOrPaused)
         {
             CloseOverlay();
             Show();

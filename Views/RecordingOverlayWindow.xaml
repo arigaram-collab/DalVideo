@@ -35,6 +35,24 @@
                        Foreground="#FF7CD4FD" FontSize="14" FontWeight="Bold"
                        VerticalAlignment="Center" Margin="0,0,8,0"/>
 
+            <!-- Pause/Resume button -->
+            <Button x:Name="PauseButton" Content="❚❚" FontSize="10" Width="24" Height="24"
+                    Background="#44FFFFFF" Foreground="#FFFFC107"
+                    BorderThickness="0" Cursor="Hand"
+                    Click="OnPauseClick"
+                    ToolTip="{x:Static props:Strings.Tooltip_OverlayPause}"
+                    AutomationProperties.Name="{x:Static props:Strings.Access_PauseRecording}"
+                    Margin="0,0,4,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="2">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
             <!-- Stop button -->
             <Button Content="■" FontSize="12" Width="24" Height="24"
                     Background="#44FFFFFF" Foreground="#FFDC3545"

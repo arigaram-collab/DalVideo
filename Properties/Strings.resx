@@ -106,6 +106,12 @@
   <data name="StopRecordingButton" xml:space="preserve">
     <value>■ 녹화 중지</value>
   </data>
+  <data name="PauseRecordingButton" xml:space="preserve">
+    <value>❚❚ 일시정지</value>
+  </data>
+  <data name="ResumeRecordingButton" xml:space="preserve">
+    <value>▶ 재개</value>
+  </data>
   <data name="OpenFolderButton" xml:space="preserve">
     <value>폴더 열기</value>
   </data>
@@ -132,6 +138,12 @@
   <data name="Tooltip_Encoder" xml:space="preserve">
     <value>GPU 하드웨어 인코더를 사용하면 CPU 부하를 줄일 수 있습니다</value>
   </data>
+  <data name="Tooltip_PauseRecording" xml:space="preserve">
+    <value>녹화를 일시정지하거나 재개합니다</value>
+  </data>
+  <data name="Tooltip_OverlayPause" xml:space="preserve">
+    <value>일시정지/재개</value>
+  </data>
   <data name="Tooltip_StartRecording" xml:space="preserve">
     <value>화면 녹화를 시작합니다 (F8)</value>
   </data>
@@ -145,6 +157,9 @@
   </data>
   <data name="StatusRecording" xml:space="preserve">
     <value>녹화 중...</value>
+  </data>
+  <data name="StatusPaused" xml:space="preserve">
+    <value>일시정지</value>
   </data>
   <data name="StatusStopping" xml:space="preserve">
     <value>녹화 중지 중...</value>
@@ -225,6 +240,9 @@ Assets 폴더에 ffmpeg.exe를 배치하거나 PATH에 추가해 주세요.</val
   </data>
   <data name="Access_Encoder" xml:space="preserve">
     <value>비디오 인코더 선택</value>
+  </data>
+  <data name="Access_PauseRecording" xml:space="preserve">
+    <value>녹화 일시정지/재개</value>
   </data>
   <data name="Access_StartRecording" xml:space="preserve">
     <value>녹화 시작</value>
