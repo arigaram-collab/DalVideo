@@ -82,6 +82,15 @@ public partial class MainViewModel : ObservableObject
                 RefreshWindowListKeepSelection();
         };
 
+        _coordinator.RecordingError += msg =>
+        {
+            Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                StatusText = $"녹화 오류: {msg}";
+                _ = StopRecording();
+            });
+        };
+
         LoadSettings();
     }
 

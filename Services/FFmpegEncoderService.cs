@@ -10,6 +10,9 @@ public sealed class FFmpegEncoderService : IDisposable
 
     public bool IsRunning => _isRunning;
 
+    /// <summary>인코딩 파이프가 깨졌을 때 발생합니다.</summary>
+    public event Action<string>? EncodingFailed;
+
     public void StartVideoOnly(string ffmpegPath, string outputPath,
         int width, int height, int fps, int crf = 23)
     {
@@ -53,9 +56,10 @@ public sealed class FFmpegEncoderService : IDisposable
         {
             _ffmpegProcess!.StandardInput.BaseStream.Write(bgraData, 0, bgraData.Length);
         }
-        catch (IOException)
+        catch (IOException ex)
         {
             _isRunning = false;
+            EncodingFailed?.Invoke($"FFmpeg 인코딩 파이프 오류: {ex.Message}");
         }
     }
 

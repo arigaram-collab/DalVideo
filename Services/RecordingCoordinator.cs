@@ -28,6 +28,9 @@ public sealed class RecordingCoordinator : IDisposable
     public RecordingState State { get; private set; } = RecordingState.Idle;
     public string? LastOutputPath { get; private set; }
 
+    /// <summary>녹화 중 치명적 오류 발생 시 알림 (에러 메시지)</summary>
+    public event Action<string>? RecordingError;
+
     public void StartRecording(RecordingSettings settings)
     {
         _settings = settings;
@@ -46,6 +49,10 @@ public sealed class RecordingCoordinator : IDisposable
         // Temp files for separate video and audio
         _tempVideoPath = Path.Combine(settings.OutputDirectory, $"_temp_video_{timestamp}.mp4");
         _tempAudioPath = Path.Combine(settings.OutputDirectory, $"_temp_audio_{timestamp}.wav");
+
+        // Subscribe to encoding failure and audio overflow
+        _encoder.EncodingFailed += msg => RecordingError?.Invoke(msg);
+        _audioCapture.BufferOverflow += msg => RecordingError?.Invoke(msg);
 
         // Start video-only encoder
         _encoder.StartVideoOnly(
@@ -176,30 +183,48 @@ public sealed class RecordingCoordinator : IDisposable
 
     private void FramePumpLoop()
     {
-        var frameDuration = TimeSpan.FromSeconds(1.0 / _settings!.FrameRate);
-
-        while (_isRecording)
+        try
         {
-            var expectedFrames = (long)(_fpsStopwatch!.Elapsed.TotalSeconds * _settings.FrameRate);
+            var frameDuration = TimeSpan.FromSeconds(1.0 / _settings!.FrameRate);
 
-            if (_frameCount < expectedFrames)
+            while (_isRecording)
             {
-                byte[]? frameToWrite;
-                lock (_frameLock)
-                {
-                    frameToWrite = _lastFrame ?? _canvasBuffer;
-                }
+                var expectedFrames = (long)(_fpsStopwatch!.Elapsed.TotalSeconds * _settings.FrameRate);
 
-                if (frameToWrite != null)
+                if (_frameCount < expectedFrames)
                 {
-                    _encoder.WriteVideoFrame(frameToWrite);
+                    byte[]? frameToWrite;
+                    lock (_frameLock)
+                    {
+                        var src = _lastFrame ?? _canvasBuffer;
+                        if (src != null)
+                        {
+                            frameToWrite = new byte[src.Length];
+                            Buffer.BlockCopy(src, 0, frameToWrite, 0, src.Length);
+                        }
+                        else
+                        {
+                            frameToWrite = null;
+                        }
+                    }
+
+                    if (frameToWrite != null)
+                    {
+                        _encoder.WriteVideoFrame(frameToWrite);
+                    }
+                    _frameCount++;
                 }
-                _frameCount++;
+                else
+                {
+                    Thread.Sleep(1);
+                }
             }
-            else
-            {
-                Thread.Sleep(1);
-            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[FramePump] Fatal error: {ex}");
+            _isRecording = false;
+            RecordingError?.Invoke($"프레임 처리 중 오류 발생: {ex.Message}");
         }
     }
 

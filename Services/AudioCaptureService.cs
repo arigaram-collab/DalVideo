@@ -16,11 +16,16 @@ public sealed class AudioCaptureService : IDisposable
     private WaveFileWriter? _waveWriter;
     private Thread? _mixThread;
     private volatile bool _isCapturing;
+    private volatile bool _overflowWarned;
 
     public WaveFormat OutputFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
 
+    /// <summary>오디오 버퍼 오버플로 발생 시 알림</summary>
+    public event Action<string>? BufferOverflow;
+
     public void StartCapture(bool captureSystemAudio, bool captureMic, string wavOutputPath)
     {
+        _overflowWarned = false;
         _waveWriter = new WaveFileWriter(wavOutputPath, OutputFormat);
 
         if (captureSystemAudio)
@@ -35,7 +40,18 @@ public sealed class AudioCaptureService : IDisposable
             _loopbackCapture.DataAvailable += (_, e) =>
             {
                 if (e.BytesRecorded > 0)
+                {
+                    if (_loopbackBuffer.BufferedBytes + e.BytesRecorded > _loopbackBuffer.BufferLength)
+                    {
+                        if (!_overflowWarned)
+                        {
+                            _overflowWarned = true;
+                            Debug.WriteLine("[Audio] Loopback buffer overflow - audio data lost");
+                            BufferOverflow?.Invoke("시스템 오디오 버퍼 오버플로: 오디오 데이터 일부가 누락될 수 있습니다");
+                        }
+                    }
                     _loopbackBuffer.AddSamples(e.Buffer, 0, e.BytesRecorded);
+                }
             };
 
             if (!FormatMatches(_loopbackCapture.WaveFormat, OutputFormat))
@@ -70,7 +86,18 @@ public sealed class AudioCaptureService : IDisposable
                     _micCapture.DataAvailable += (_, e) =>
                     {
                         if (e.BytesRecorded > 0)
+                        {
+                            if (_micBuffer.BufferedBytes + e.BytesRecorded > _micBuffer.BufferLength)
+                            {
+                                if (!_overflowWarned)
+                                {
+                                    _overflowWarned = true;
+                                    Debug.WriteLine("[Audio] Mic buffer overflow - audio data lost");
+                                    BufferOverflow?.Invoke("마이크 버퍼 오버플로: 오디오 데이터 일부가 누락될 수 있습니다");
+                                }
+                            }
                             _micBuffer.AddSamples(e.Buffer, 0, e.BytesRecorded);
+                        }
                     };
 
                     if (!FormatMatches(_micCapture.WaveFormat, OutputFormat))
