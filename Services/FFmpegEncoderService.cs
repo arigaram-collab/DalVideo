@@ -13,9 +13,13 @@ public sealed class FFmpegEncoderService : IDisposable
     /// <summary>인코딩 파이프가 깨졌을 때 발생합니다.</summary>
     public event Action<string>? EncodingFailed;
 
+    /// <summary>FFmpeg가 시작 직후 비정상 종료했는지 여부</summary>
+    public bool HasFailed { get; private set; }
+
     public void StartVideoOnly(string ffmpegPath, string outputPath,
         int width, int height, int fps, string encoderArgs)
     {
+        HasFailed = false;
         var args = $"-y -f rawvideo -pix_fmt bgra -s {width}x{height} -r {fps} -i pipe:0 "
                  + $"{encoderArgs} -an "
                  + $"\"{outputPath}\"";
@@ -49,6 +53,15 @@ public sealed class FFmpegEncoderService : IDisposable
                 AppLogger.Warn($"[FFmpeg] stderr read failed: {ex.Message}");
             }
         });
+
+        // Wait briefly and check if FFmpeg crashed immediately (e.g. encoder init failure)
+        Thread.Sleep(300);
+        if (_ffmpegProcess.HasExited && _ffmpegProcess.ExitCode != 0)
+        {
+            _isRunning = false;
+            HasFailed = true;
+            AppLogger.Warn($"[FFmpeg] Process exited immediately with code {_ffmpegProcess.ExitCode}");
+        }
     }
 
     public void WriteVideoFrame(byte[] bgraData)

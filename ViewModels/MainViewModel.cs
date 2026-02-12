@@ -275,6 +275,10 @@ public partial class MainViewModel : ObservableObject
         int canvasWidth = monitor != null ? (int)monitor.Bounds.Width : 1920;
         int canvasHeight = monitor != null ? (int)monitor.Bounds.Height : 1080;
 
+        // h264 requires even dimensions
+        canvasWidth &= ~1;
+        canvasHeight &= ~1;
+
         // Find FFmpeg
         var ffmpegPath = FFmpegLocatorService.FindFFmpeg();
         if (ffmpegPath == null)

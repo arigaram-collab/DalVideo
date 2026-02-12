@@ -9,7 +9,7 @@ public sealed class RecordingCoordinator : IDisposable
 {
     private readonly ScreenCaptureService _screenCapture = new();
     private readonly AudioCaptureService _audioCapture = new();
-    private readonly FFmpegEncoderService _encoder = new();
+    private FFmpegEncoderService _encoder = new();
 
     private RecordingSettings? _settings;
     private Stopwatch? _fpsStopwatch;
@@ -74,14 +74,36 @@ public sealed class RecordingCoordinator : IDisposable
         _encoder.EncodingFailed += msg => RecordingError?.Invoke(msg);
         _audioCapture.BufferOverflow += msg => RecordingError?.Invoke(msg);
 
-        // Start video-only encoder
+        // Start video-only encoder (with automatic fallback to libx264)
+        var outputFile = _hasAudio ? _tempVideoPath : LastOutputPath;
         _encoder.StartVideoOnly(
             settings.FFmpegPath,
-            _hasAudio ? _tempVideoPath : LastOutputPath,
+            outputFile,
             settings.CanvasWidth,
             settings.CanvasHeight,
             settings.FrameRate,
             settings.EncoderArgs);
+
+        if (_encoder.HasFailed)
+        {
+            var fallbackArgs = HwEncoderService.BuildEncoderArgs("libx264",
+                settings.EncoderArgs.Contains("-qp 18") || settings.EncoderArgs.Contains("-crf 18") ? 18
+                : settings.EncoderArgs.Contains("-qp 28") || settings.EncoderArgs.Contains("-crf 28") ? 28 : 23);
+            AppLogger.Warn($"[Coordinator] Encoder failed, falling back to libx264: {fallbackArgs}");
+
+            _encoder.Dispose();
+            _encoder = new FFmpegEncoderService();
+            _encoder.StartVideoOnly(
+                settings.FFmpegPath,
+                outputFile,
+                settings.CanvasWidth,
+                settings.CanvasHeight,
+                settings.FrameRate,
+                fallbackArgs);
+
+            if (_encoder.HasFailed)
+                throw new InvalidOperationException("FFmpeg 인코더를 시작할 수 없습니다. FFmpeg 설치를 확인해 주세요.");
+        }
 
         // Start audio capture to WAV file
         if (_hasAudio)
