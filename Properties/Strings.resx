@@ -95,6 +95,15 @@
   <data name="ChangeButton" xml:space="preserve">
     <value>변경</value>
   </data>
+  <data name="ResetSettingsButton" xml:space="preserve">
+    <value>기본값으로 복원</value>
+  </data>
+  <data name="Tooltip_ResetSettings" xml:space="preserve">
+    <value>모든 설정을 기본값으로 되돌립니다</value>
+  </data>
+  <data name="Confirm_ResetSettings" xml:space="preserve">
+    <value>모든 설정을 기본값으로 복원하시겠습니까?</value>
+  </data>
 
   <!-- ═══ Controls ═══ -->
   <data name="HotkeyHint" xml:space="preserve">

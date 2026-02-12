@@ -41,6 +41,9 @@ public static class Strings
     public static string EncoderLabel => GetString(nameof(EncoderLabel));
     public static string SaveLabel => GetString(nameof(SaveLabel));
     public static string ChangeButton => GetString(nameof(ChangeButton));
+    public static string ResetSettingsButton => GetString(nameof(ResetSettingsButton));
+    public static string Tooltip_ResetSettings => GetString(nameof(Tooltip_ResetSettings));
+    public static string Confirm_ResetSettings => GetString(nameof(Confirm_ResetSettings));
 
     // ═══ Controls ═══
     public static string HotkeyHint => GetString(nameof(HotkeyHint));

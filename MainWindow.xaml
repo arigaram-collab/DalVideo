@@ -144,6 +144,11 @@
                             Command="{Binding ChangeOutputDirectoryCommand}"
                             IsEnabled="{Binding IsIdle}"/>
                 </StackPanel>
+                <Button Content="{x:Static props:Strings.ResetSettingsButton}" Margin="0,6,0,0"
+                        HorizontalAlignment="Right"
+                        Style="{StaticResource DarkButton}"
+                        Command="{Binding ResetSettingsCommand}"
+                        ToolTip="{x:Static props:Strings.Tooltip_ResetSettings}"/>
             </StackPanel>
         </GroupBox>
 

@@ -191,6 +191,7 @@ public partial class MainViewModel : ObservableObject
         StopRecordingCommand.NotifyCanExecuteChanged();
         TogglePauseCommand.NotifyCanExecuteChanged();
         ChangeCaptureTargetCommand.NotifyCanExecuteChanged();
+        ResetSettingsCommand.NotifyCanExecuteChanged();
 
         StatusText = value switch
         {
@@ -422,6 +423,25 @@ public partial class MainViewModel : ObservableObject
         {
             Process.Start("explorer.exe", OutputDirectory);
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private void ResetSettings()
+    {
+        var result = MessageBox.Show(
+            Strings.Confirm_ResetSettings, "DalVideo",
+            MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (result != MessageBoxResult.Yes) return;
+
+        var defaults = new AppSettings();
+        SelectedCaptureMode = defaults.CaptureMode;
+        CaptureSystemAudio = defaults.CaptureSystemAudio;
+        CaptureMicrophone = defaults.CaptureMicrophone;
+        FrameRate = defaults.FrameRate;
+        SelectedQuality = defaults.Quality;
+        UseCountdown = defaults.UseCountdown;
+        SelectedEncoder = defaults.Encoder;
+        OutputDirectory = defaults.OutputDirectory;
     }
 
     [RelayCommand(CanExecute = nameof(IsRecording))]
