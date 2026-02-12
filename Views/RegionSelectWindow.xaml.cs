@@ -40,6 +40,64 @@ public partial class RegionSelectWindow : Window
             _dpiScaleX = source.CompositionTarget.TransformToDevice.M11;
             _dpiScaleY = source.CompositionTarget.TransformToDevice.M22;
         }
+        GeneratePresets();
+    }
+
+    private void GeneratePresets()
+    {
+        var monitors = WindowEnumerationService.GetMonitors();
+        var primary = monitors.FirstOrDefault(m => m.IsPrimary) ?? monitors.First();
+        bool isMultiMonitor = monitors.Count > 1;
+        var added = new HashSet<(int, int)>();
+
+        // Each monitor's full resolution
+        for (int i = 0; i < monitors.Count; i++)
+        {
+            var m = monitors[i];
+            int w = (int)m.Bounds.Width;
+            int h = (int)m.Bounds.Height;
+            if (!added.Add((w, h)) && !isMultiMonitor) continue;
+
+            string label = isMultiMonitor
+                ? $"모니터{i + 1} ({w}x{h})"
+                : $"전체 ({w}x{h})";
+            AddPresetButton(label, w, h, m.Bounds);
+        }
+
+        // Standard resolutions that fit within primary monitor
+        var standards = new[] { (1920, 1080), (1280, 720), (854, 480) };
+        foreach (var (sw, sh) in standards)
+        {
+            if (!added.Contains((sw, sh)) &&
+                sw <= (int)primary.Bounds.Width && sh <= (int)primary.Bounds.Height)
+            {
+                AddPresetButton($"{sw} x {sh}", sw, sh, primary.Bounds);
+                added.Add((sw, sh));
+            }
+        }
+    }
+
+    private void AddPresetButton(string label, int width, int height, Rect monitorBounds)
+    {
+        var btn = new System.Windows.Controls.Button { Content = label };
+        btn.Click += (_, _) => ApplyPreset(width, height, monitorBounds);
+        PresetButtonPanel.Children.Add(btn);
+    }
+
+    private void ApplyPreset(int w, int h, Rect monitorBounds)
+    {
+        var px = monitorBounds.X + (monitorBounds.Width - w) / 2;
+        var py = monitorBounds.Y + (monitorBounds.Height - h) / 2;
+
+        px = Math.Max(monitorBounds.X, px);
+        py = Math.Max(monitorBounds.Y, py);
+        w = (int)Math.Min(w, monitorBounds.Width);
+        h = (int)Math.Min(h, monitorBounds.Height);
+
+        SelectedRegion = new Rect(px, py, w, h);
+        RegionSelected = true;
+        DialogResult = true;
+        Close();
     }
 
     private void OnMouseDown(object sender, MouseButtonEventArgs e)
@@ -101,33 +159,6 @@ public partial class RegionSelectWindow : Window
         }
     }
 
-    private void OnPresetClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is System.Windows.Controls.Button btn && btn.Tag is string tag)
-        {
-            var parts = tag.Split(',');
-            if (parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h))
-            {
-                // Center on primary monitor (physical pixel coordinates)
-                var monitors = WindowEnumerationService.GetMonitors();
-                var primary = monitors.FirstOrDefault(m => m.IsPrimary) ?? monitors.First();
-                var bounds = primary.Bounds;
-
-                var px = bounds.X + (bounds.Width - w) / 2;
-                var py = bounds.Y + (bounds.Height - h) / 2;
-
-                px = Math.Max(bounds.X, px);
-                py = Math.Max(bounds.Y, py);
-                w = (int)Math.Min(w, bounds.Width);
-                h = (int)Math.Min(h, bounds.Height);
-
-                SelectedRegion = new Rect(px, py, w, h);
-                RegionSelected = true;
-                DialogResult = true;
-                Close();
-            }
-        }
-    }
 
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
