@@ -127,12 +127,12 @@ public sealed class RecordingCoordinator : IDisposable
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[Coordinator] Mux failed: {ex.Message}");
+                AppLogger.Warn($"[Coordinator] Mux failed: {ex.Message}");
                 // If mux failed, keep video-only file as output
                 if (File.Exists(_tempVideoPath))
                 {
                     try { File.Move(_tempVideoPath, LastOutputPath, true); }
-                    catch { }
+                    catch (Exception moveEx) { AppLogger.Error("[Coordinator] Video file move failed", moveEx); }
                 }
                 TryDeleteFile(_tempAudioPath);
             }
@@ -202,7 +202,7 @@ public sealed class RecordingCoordinator : IDisposable
                 // Prevent burst: if too far behind, skip ahead
                 if (expectedFrames - _frameCount > maxBurstFrames)
                 {
-                    Debug.WriteLine($"[FramePump] Skipping {expectedFrames - _frameCount - maxBurstFrames} frames to prevent burst");
+                    AppLogger.Warn($"[FramePump] Skipping {expectedFrames - _frameCount - maxBurstFrames} frames to prevent burst");
                     _frameCount = expectedFrames - maxBurstFrames;
                 }
 
@@ -237,7 +237,7 @@ public sealed class RecordingCoordinator : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[FramePump] Fatal error: {ex}");
+            AppLogger.Warn($"[FramePump] Fatal error: {ex}");
             _isRecording = false;
             RecordingError?.Invoke($"프레임 처리 중 오류 발생: {ex.Message}");
         }
@@ -316,7 +316,7 @@ public sealed class RecordingCoordinator : IDisposable
     private static void TryDeleteFile(string path)
     {
         try { if (File.Exists(path)) File.Delete(path); }
-        catch { }
+        catch (Exception ex) { AppLogger.Warn($"[Coordinator] Failed to delete temp file {path}: {ex.Message}"); }
     }
 
     public void Dispose()

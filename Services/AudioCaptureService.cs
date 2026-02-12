@@ -46,7 +46,7 @@ public sealed class AudioCaptureService : IDisposable
                         if (!_overflowWarned)
                         {
                             _overflowWarned = true;
-                            Debug.WriteLine("[Audio] Loopback buffer overflow - audio data lost");
+                            AppLogger.Warn("[Audio] Loopback buffer overflow - audio data lost");
                             BufferOverflow?.Invoke("시스템 오디오 버퍼 오버플로: 오디오 데이터 일부가 누락될 수 있습니다");
                         }
                     }
@@ -61,7 +61,7 @@ public sealed class AudioCaptureService : IDisposable
             }
 
             _loopbackCapture.StartRecording();
-            Debug.WriteLine($"[Audio] Loopback format: {_loopbackCapture.WaveFormat}");
+            AppLogger.Warn($"[Audio] Loopback format: {_loopbackCapture.WaveFormat}");
         }
 
         if (captureMic)
@@ -71,7 +71,7 @@ public sealed class AudioCaptureService : IDisposable
                 var enumerator = new MMDeviceEnumerator();
                 if (!enumerator.HasDefaultAudioEndpoint(DataFlow.Capture, Role.Communications))
                 {
-                    Debug.WriteLine("[Audio] No microphone device found");
+                    AppLogger.Warn("[Audio] No microphone device found");
                 }
                 else
                 {
@@ -92,7 +92,7 @@ public sealed class AudioCaptureService : IDisposable
                                 if (!_overflowWarned)
                                 {
                                     _overflowWarned = true;
-                                    Debug.WriteLine("[Audio] Mic buffer overflow - audio data lost");
+                                    AppLogger.Warn("[Audio] Mic buffer overflow - audio data lost");
                                     BufferOverflow?.Invoke("마이크 버퍼 오버플로: 오디오 데이터 일부가 누락될 수 있습니다");
                                 }
                             }
@@ -107,12 +107,12 @@ public sealed class AudioCaptureService : IDisposable
                     }
 
                     _micCapture.StartRecording();
-                    Debug.WriteLine($"[Audio] Mic format: {_micCapture.WaveFormat}");
+                    AppLogger.Warn($"[Audio] Mic format: {_micCapture.WaveFormat}");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[Audio] Mic init failed: {ex.Message}");
+                AppLogger.Warn($"[Audio] Mic init failed: {ex.Message}");
                 // Clean up partially initialized mic resources
                 _micResampler?.Dispose();
                 _micResampler = null;
@@ -159,14 +159,14 @@ public sealed class AudioCaptureService : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[Audio] WAV write error: {ex.Message}");
+                    AppLogger.Warn($"[Audio] WAV write error: {ex.Message}");
                 }
                 chunksWritten++;
 
                 // Prevent burst: if too far behind, skip ahead
                 if (expectedChunks - chunksWritten > maxCatchUpChunks)
                 {
-                    Debug.WriteLine($"[Audio] Skipping {expectedChunks - chunksWritten - 1} chunks to prevent burst");
+                    AppLogger.Warn($"[Audio] Skipping {expectedChunks - chunksWritten - 1} chunks to prevent burst");
                     chunksWritten = expectedChunks - 1;
                 }
             }
@@ -225,7 +225,7 @@ public sealed class AudioCaptureService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[Audio] Mix error: {ex.Message}");
+            AppLogger.Warn($"[Audio] Mix error: {ex.Message}");
         }
 
         return maxRead;
@@ -238,7 +238,7 @@ public sealed class AudioCaptureService : IDisposable
 
         if (remainingLoopback + remainingMic == 0) return;
 
-        Debug.WriteLine($"[Audio] Draining remaining: loopback={remainingLoopback}, mic={remainingMic}");
+        AppLogger.Warn($"[Audio] Draining remaining: loopback={remainingLoopback}, mic={remainingMic}");
 
         while ((_loopbackBuffer?.BufferedBytes ?? 0) > 0 || (_micBuffer?.BufferedBytes ?? 0) > 0)
         {
@@ -254,7 +254,7 @@ public sealed class AudioCaptureService : IDisposable
             else break;
         }
 
-        Debug.WriteLine("[Audio] Drain complete");
+        AppLogger.Warn("[Audio] Drain complete");
     }
 
     private static bool FormatMatches(WaveFormat a, WaveFormat b)

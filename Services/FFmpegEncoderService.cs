@@ -33,7 +33,7 @@ public sealed class FFmpegEncoderService : IDisposable
             }
         };
 
-        Debug.WriteLine($"[FFmpeg] Video: {ffmpegPath} {args}");
+        AppLogger.Info($"[FFmpeg] Video: {ffmpegPath} {args}");
         _ffmpegProcess.Start();
         _isRunning = true;
 
@@ -42,9 +42,12 @@ public sealed class FFmpegEncoderService : IDisposable
             try
             {
                 var stderr = _ffmpegProcess.StandardError.ReadToEnd();
-                Debug.WriteLine($"[FFmpeg] Video stderr: {stderr}");
+                AppLogger.Info($"[FFmpeg] Video stderr: {stderr}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLogger.Warn($"[FFmpeg] stderr read failed: {ex.Message}");
+            }
         });
     }
 
@@ -75,10 +78,11 @@ public sealed class FFmpegEncoderService : IDisposable
             {
                 await _ffmpegProcess.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
             }
-            Debug.WriteLine($"[FFmpeg] Video exit code: {_ffmpegProcess?.ExitCode}");
+            AppLogger.Info($"[FFmpeg] Video exit code: {_ffmpegProcess?.ExitCode}");
         }
         catch (TimeoutException)
         {
+            AppLogger.Warn("[FFmpeg] Video encoding timeout, killing process");
             _ffmpegProcess?.Kill();
         }
     }
@@ -90,7 +94,7 @@ public sealed class FFmpegEncoderService : IDisposable
                  + "-c:v copy -c:a aac -b:a 192k -movflags +faststart "
                  + $"\"{outputPath}\"";
 
-        Debug.WriteLine($"[FFmpeg] Mux: {ffmpegPath} {args}");
+        AppLogger.Info($"[FFmpeg] Mux: {ffmpegPath} {args}");
 
         var process = new Process
         {
@@ -111,13 +115,16 @@ public sealed class FFmpegEncoderService : IDisposable
             try
             {
                 var stderr = process.StandardError.ReadToEnd();
-                Debug.WriteLine($"[FFmpeg] Mux stderr: {stderr}");
+                AppLogger.Info($"[FFmpeg] Mux stderr: {stderr}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLogger.Warn($"[FFmpeg] Mux stderr read failed: {ex.Message}");
+            }
         });
 
         await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(60));
-        Debug.WriteLine($"[FFmpeg] Mux exit code: {process.ExitCode}");
+        AppLogger.Info($"[FFmpeg] Mux exit code: {process.ExitCode}");
     }
 
     public void Dispose()

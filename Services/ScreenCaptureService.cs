@@ -171,7 +171,7 @@ public sealed class ScreenCaptureService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ScreenCapture] Frame error: {ex.Message}");
+            AppLogger.Warn($"[ScreenCapture] Frame error: {ex.Message}");
         }
     }
 

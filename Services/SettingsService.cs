@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using DalVideo.Models;
@@ -29,7 +28,7 @@ public static class SettingsService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[Settings] Load failed: {ex.Message}");
+            AppLogger.Error("[Settings] Load failed", ex);
         }
         return new AppSettings();
     }
@@ -44,7 +43,7 @@ public static class SettingsService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[Settings] Save failed: {ex.Message}");
+            AppLogger.Error("[Settings] Save failed", ex);
         }
     }
 }

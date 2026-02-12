@@ -211,6 +211,21 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        // Validate output directory
+        try
+        {
+            Directory.CreateDirectory(OutputDirectory);
+            var testFile = Path.Combine(OutputDirectory, $"_write_test_{Guid.NewGuid():N}.tmp");
+            File.WriteAllBytes(testFile, [0]);
+            File.Delete(testFile);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"출력 디렉토리에 쓸 수 없습니다: {OutputDirectory}\n{ex.Message}",
+                "DalVideo", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
         // Countdown before recording
         if (UseCountdown)
         {
