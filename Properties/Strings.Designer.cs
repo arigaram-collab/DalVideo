@@ -38,6 +38,7 @@ public static class Strings
     public static string FpsLabel => GetString(nameof(FpsLabel));
     public static string QualityLabel => GetString(nameof(QualityLabel));
     public static string CountdownLabel => GetString(nameof(CountdownLabel));
+    public static string CursorLabel => GetString(nameof(CursorLabel));
     public static string EncoderLabel => GetString(nameof(EncoderLabel));
     public static string SaveLabel => GetString(nameof(SaveLabel));
     public static string ChangeButton => GetString(nameof(ChangeButton));
@@ -60,6 +61,7 @@ public static class Strings
     public static string Tooltip_Fps => GetString(nameof(Tooltip_Fps));
     public static string Tooltip_Quality => GetString(nameof(Tooltip_Quality));
     public static string Tooltip_Countdown => GetString(nameof(Tooltip_Countdown));
+    public static string Tooltip_Cursor => GetString(nameof(Tooltip_Cursor));
     public static string Tooltip_Encoder => GetString(nameof(Tooltip_Encoder));
     public static string Tooltip_PauseRecording => GetString(nameof(Tooltip_PauseRecording));
     public static string Tooltip_OverlayPause => GetString(nameof(Tooltip_OverlayPause));
@@ -100,6 +102,7 @@ public static class Strings
     public static string Access_Fps => GetString(nameof(Access_Fps));
     public static string Access_Quality => GetString(nameof(Access_Quality));
     public static string Access_Countdown => GetString(nameof(Access_Countdown));
+    public static string Access_Cursor => GetString(nameof(Access_Cursor));
     public static string Access_Encoder => GetString(nameof(Access_Encoder));
     public static string Access_PauseRecording => GetString(nameof(Access_PauseRecording));
     public static string Access_StartRecording => GetString(nameof(Access_StartRecording));

@@ -96,6 +96,7 @@ public sealed class RecordingCoordinator : IDisposable
         }
 
         // Hook up screen capture
+        _screenCapture.CaptureCursor = settings.CaptureCursor;
         _screenCapture.FrameArrived += OnFrameArrived;
         _screenCapture.StartCapture(settings.Target);
 

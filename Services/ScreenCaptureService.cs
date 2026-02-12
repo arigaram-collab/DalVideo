@@ -26,6 +26,7 @@ public sealed class ScreenCaptureService : IDisposable
 
     public event Action<byte[], int, int>? FrameArrived;
     public bool IsCapturing { get; private set; }
+    public bool CaptureCursor { get; set; } = true;
 
     public void StartCapture(CaptureTarget target)
     {
@@ -45,6 +46,9 @@ public sealed class ScreenCaptureService : IDisposable
         _session = _framePool.CreateCaptureSession(_captureItem);
 
         try { _session.IsBorderRequired = false; }
+        catch { /* Not supported on older Windows versions */ }
+
+        try { _session.IsCursorCaptureEnabled = CaptureCursor; }
         catch { /* Not supported on older Windows versions */ }
 
         _session.StartCapture();
@@ -87,6 +91,9 @@ public sealed class ScreenCaptureService : IDisposable
         _session = _framePool!.CreateCaptureSession(_captureItem!);
 
         try { _session.IsBorderRequired = false; }
+        catch { /* Not supported on older Windows versions */ }
+
+        try { _session.IsCursorCaptureEnabled = CaptureCursor; }
         catch { /* Not supported on older Windows versions */ }
 
         _session.StartCapture();

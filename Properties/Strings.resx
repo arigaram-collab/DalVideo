@@ -86,6 +86,9 @@
   <data name="CountdownLabel" xml:space="preserve">
     <value>카운트다운</value>
   </data>
+  <data name="CursorLabel" xml:space="preserve">
+    <value>마우스 커서</value>
+  </data>
   <data name="EncoderLabel" xml:space="preserve">
     <value>인코더:</value>
   </data>
@@ -143,6 +146,9 @@
   </data>
   <data name="Tooltip_Countdown" xml:space="preserve">
     <value>녹화 시작 전 3초 카운트다운을 표시합니다</value>
+  </data>
+  <data name="Tooltip_Cursor" xml:space="preserve">
+    <value>녹화 영상에 마우스 커서를 포함합니다</value>
   </data>
   <data name="Tooltip_Encoder" xml:space="preserve">
     <value>GPU 하드웨어 인코더를 사용하면 CPU 부하를 줄일 수 있습니다</value>
@@ -254,6 +260,9 @@ Assets 폴더에 ffmpeg.exe를 배치하거나 PATH에 추가해 주세요.</val
   </data>
   <data name="Access_Countdown" xml:space="preserve">
     <value>카운트다운 사용</value>
+  </data>
+  <data name="Access_Cursor" xml:space="preserve">
+    <value>마우스 커서 표시</value>
   </data>
   <data name="Access_Encoder" xml:space="preserve">
     <value>비디오 인코더 선택</value>

@@ -11,4 +11,5 @@ public class RecordingSettings
     public string OutputDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
     public string FFmpegPath { get; set; } = "ffmpeg.exe";
     public string EncoderArgs { get; set; } = "-c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p";
+    public bool CaptureCursor { get; set; } = true;
 }

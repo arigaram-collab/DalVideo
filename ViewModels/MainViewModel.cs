@@ -66,6 +66,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _selectedEncoder = "auto";
 
+    [ObservableProperty]
+    private bool _captureCursor = true;
+
     // TODO: i18n - 캡처 모드/화질 문자열을 enum으로 변환하면 완전한 국제화 가능
     public ObservableCollection<string> CaptureModes { get; } =
     [
@@ -139,6 +142,7 @@ public partial class MainViewModel : ObservableObject
         _selectedQuality = s.Quality;
         _useCountdown = s.UseCountdown;
         _selectedEncoder = s.Encoder;
+        _captureCursor = s.CaptureCursor;
         _outputDirectory = s.OutputDirectory;
 
         DetectEncoders();
@@ -173,6 +177,7 @@ public partial class MainViewModel : ObservableObject
             Quality = SelectedQuality,
             UseCountdown = UseCountdown,
             Encoder = SelectedEncoder,
+            CaptureCursor = CaptureCursor,
             OutputDirectory = OutputDirectory
         });
     }
@@ -226,6 +231,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedQualityChanged(string value) => SaveSettings();
     partial void OnUseCountdownChanged(bool value) => SaveSettings();
     partial void OnSelectedEncoderChanged(string value) => SaveSettings();
+    partial void OnCaptureCursorChanged(bool value) => SaveSettings();
     partial void OnOutputDirectoryChanged(string value) => SaveSettings();
 
     [RelayCommand]
@@ -324,7 +330,8 @@ public partial class MainViewModel : ObservableObject
             CaptureMicrophone = CaptureMicrophone,
             OutputDirectory = OutputDirectory,
             FFmpegPath = ffmpegPath,
-            EncoderArgs = encoderArgs
+            EncoderArgs = encoderArgs,
+            CaptureCursor = CaptureCursor
         };
 
         try
@@ -456,6 +463,7 @@ public partial class MainViewModel : ObservableObject
         SelectedQuality = defaults.Quality;
         UseCountdown = defaults.UseCountdown;
         SelectedEncoder = defaults.Encoder;
+        CaptureCursor = defaults.CaptureCursor;
         OutputDirectory = defaults.OutputDirectory;
     }
 

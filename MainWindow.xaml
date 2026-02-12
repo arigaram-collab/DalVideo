@@ -122,6 +122,12 @@
                               TabIndex="6"
                               AutomationProperties.Name="{x:Static props:Strings.Access_Countdown}"
                               ToolTip="{x:Static props:Strings.Tooltip_Countdown}"/>
+                    <CheckBox Content="{x:Static props:Strings.CursorLabel}"
+                              IsChecked="{Binding CaptureCursor}"
+                              IsEnabled="{Binding IsIdle}"
+                              Margin="16,0,0,0" VerticalAlignment="Center"
+                              AutomationProperties.Name="{x:Static props:Strings.Access_Cursor}"
+                              ToolTip="{x:Static props:Strings.Tooltip_Cursor}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                     <TextBlock Text="{x:Static props:Strings.EncoderLabel}" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>

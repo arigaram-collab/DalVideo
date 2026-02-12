@@ -14,6 +14,7 @@ public class AppSettings
     public string Quality { get; set; } = "표준";
     public bool UseCountdown { get; set; } = true;
     public string Encoder { get; set; } = "auto";
+    public bool CaptureCursor { get; set; } = true;
     public string OutputDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
 
     /// <summary>
