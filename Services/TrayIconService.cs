@@ -53,10 +53,13 @@ public sealed class TrayIconService : IDisposable
         }
     }
 
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+    private static extern bool DestroyIcon(nint hIcon);
+
     private static Icon CreateDefaultIcon()
     {
         // Create a simple red circle icon programmatically
-        var bmp = new Bitmap(16, 16);
+        using var bmp = new Bitmap(16, 16);
         using (var g = Graphics.FromImage(bmp))
         {
             g.Clear(Color.Transparent);
@@ -71,7 +74,12 @@ public sealed class TrayIconService : IDisposable
             });
         }
         var handle = bmp.GetHicon();
-        return Icon.FromHandle(handle);
+        // Icon.FromHandle does not take ownership; clone to get an independent Icon, then free the handle
+        var tempIcon = Icon.FromHandle(handle);
+        var icon = (Icon)tempIcon.Clone();
+        tempIcon.Dispose();
+        DestroyIcon(handle);
+        return icon;
     }
 
     public void Dispose()

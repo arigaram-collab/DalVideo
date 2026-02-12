@@ -21,7 +21,7 @@ internal static class Direct3DHelper
             DriverType.Hardware,
             DeviceCreationFlags.BgraSupport);
 
-        var dxgiDevice = sharpDxDevice.QueryInterface<SharpDX.DXGI.Device>();
+        using var dxgiDevice = sharpDxDevice.QueryInterface<SharpDX.DXGI.Device>();
         uint hr = CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.NativePointer, out var pUnknown);
         if (hr != 0)
             throw new COMException("Failed to create Direct3D11 device from DXGI device", (int)hr);

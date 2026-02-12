@@ -113,6 +113,12 @@ public sealed class AudioCaptureService : IDisposable
             catch (Exception ex)
             {
                 Debug.WriteLine($"[Audio] Mic init failed: {ex.Message}");
+                // Clean up partially initialized mic resources
+                _micResampler?.Dispose();
+                _micResampler = null;
+                _micCapture?.Dispose();
+                _micCapture = null;
+                _micBuffer = null;
             }
         }
 

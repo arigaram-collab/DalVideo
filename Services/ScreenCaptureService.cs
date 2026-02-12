@@ -58,15 +58,33 @@ public sealed class ScreenCaptureService : IDisposable
         _session?.Dispose();
         _session = null;
 
-        var newItem = CreateCaptureItem(newTarget);
-        _framePool!.Recreate(
-            _winrtDevice!,
-            DirectXPixelFormat.B8G8R8A8UIntNormalized,
-            2,
-            newItem.Size);
+        var oldItem = _captureItem;
+        try
+        {
+            var newItem = CreateCaptureItem(newTarget);
+            _framePool!.Recreate(
+                _winrtDevice!,
+                DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                2,
+                newItem.Size);
 
-        _captureItem = newItem;
-        _session = _framePool.CreateCaptureSession(_captureItem);
+            _captureItem = newItem;
+        }
+        catch
+        {
+            // Recreate failed: restore previous capture item
+            if (oldItem != null)
+            {
+                _framePool!.Recreate(
+                    _winrtDevice!,
+                    DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                    2,
+                    oldItem.Size);
+            }
+            throw;
+        }
+
+        _session = _framePool!.CreateCaptureSession(_captureItem!);
 
         try { _session.IsBorderRequired = false; }
         catch { /* Not supported on older Windows versions */ }
