@@ -6,10 +6,11 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DalVideo.Models;
+using DalVideo.Properties;
 using DalVideo.Services;
-using DalVideo.Views;
 using FolderBrowserDialog = System.Windows.Forms.FolderBrowserDialog;
 using WinFormsDialogResult = System.Windows.Forms.DialogResult;
+// Note: No 'using DalVideo.Views' - View types are accessed via delegates (MVVM)
 
 namespace DalVideo.ViewModels;
 
@@ -30,7 +31,7 @@ public partial class MainViewModel : ObservableObject
     private string _selectedCaptureMode = "전체 화면";
 
     [ObservableProperty]
-    private string _statusText = "대기 중";
+    private string _statusText = Strings.StatusIdle;
 
     [ObservableProperty]
     private bool _captureSystemAudio = true;
@@ -53,6 +54,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _selectedQuality = "표준";
 
+    // TODO: i18n - 캡처 모드/화질 문자열을 enum으로 변환하면 완전한 국제화 가능
     public ObservableCollection<string> CaptureModes { get; } =
     [
         "전체 화면",
@@ -65,6 +67,12 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<string> QualityPresets { get; } = ["고품질", "표준", "소형"];
 
     public ObservableCollection<WindowInfo> AvailableWindows { get; } = [];
+
+    /// <summary>View에서 영역 선택 다이얼로그를 표시하는 델리게이트. 선택된 영역(Rect)을 반환, 취소 시 null.</summary>
+    public Func<Rect?>? RegionSelectHandler { get; set; }
+
+    /// <summary>View에서 카운트다운 다이얼로그를 표시하는 델리게이트. 완료 시 true, 취소 시 false.</summary>
+    public Func<bool>? ShowCountdown { get; set; }
 
     public MainViewModel()
     {
@@ -86,7 +94,7 @@ public partial class MainViewModel : ObservableObject
         {
             Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                StatusText = $"녹화 오류: {msg}";
+                StatusText = string.Format(Strings.Error_Recording, msg);
                 _ = StopRecording();
             });
         };
@@ -133,9 +141,9 @@ public partial class MainViewModel : ObservableObject
 
         StatusText = value switch
         {
-            RecordingState.Idle => "대기 중",
-            RecordingState.Recording => "녹화 중...",
-            RecordingState.Stopping => "녹화 중지 중...",
+            RecordingState.Idle => Strings.StatusIdle,
+            RecordingState.Recording => Strings.StatusRecording,
+            RecordingState.Stopping => Strings.StatusStopping,
             _ => StatusText
         };
     }
@@ -203,10 +211,10 @@ public partial class MainViewModel : ObservableObject
         int canvasHeight = monitor != null ? (int)monitor.Bounds.Height : 1080;
 
         // Find FFmpeg
-        var ffmpegPath = FindFFmpeg();
+        var ffmpegPath = FFmpegLocatorService.FindFFmpeg();
         if (ffmpegPath == null)
         {
-            MessageBox.Show("FFmpeg를 찾을 수 없습니다.\nAssets 폴더에 ffmpeg.exe를 배치하거나 PATH에 추가해 주세요.",
+            MessageBox.Show(Strings.Error_FFmpegNotFound,
                 "DalVideo", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
@@ -221,17 +229,15 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"출력 디렉토리에 쓸 수 없습니다: {OutputDirectory}\n{ex.Message}",
+            MessageBox.Show(string.Format(Strings.Error_OutputDirWrite, OutputDirectory, ex.Message),
                 "DalVideo", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
-        // Countdown before recording
+        // Countdown before recording (via View delegate)
         if (UseCountdown)
         {
-            var countdown = new CountdownWindow();
-            countdown.ShowDialog();
-            if (!countdown.Completed) return;
+            if (ShowCountdown?.Invoke() != true) return;
         }
 
         var crf = SelectedQuality switch
@@ -266,7 +272,7 @@ public partial class MainViewModel : ObservableObject
         {
             State = RecordingState.Idle;
             _timer.Stop();
-            MessageBox.Show($"녹화 시작 실패: {ex.Message}", "DalVideo",
+            MessageBox.Show(string.Format(Strings.Error_RecordingStart, ex.Message), "DalVideo",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -280,11 +286,11 @@ public partial class MainViewModel : ObservableObject
         try
         {
             await _coordinator.StopRecordingAsync();
-            StatusText = $"저장 완료: {_coordinator.LastOutputPath}";
+            StatusText = string.Format(Strings.Info_SaveComplete, _coordinator.LastOutputPath);
         }
         catch (Exception ex)
         {
-            StatusText = $"녹화 중지 오류: {ex.Message}";
+            StatusText = string.Format(Strings.Error_RecordingStop, ex.Message);
         }
         finally
         {
@@ -297,7 +303,7 @@ public partial class MainViewModel : ObservableObject
     {
         using var dialog = new FolderBrowserDialog
         {
-            Description = "녹화 파일 저장 위치 선택",
+            Description = Strings.FolderBrowserDescription,
             SelectedPath = OutputDirectory,
             ShowNewFolderButton = true
         };
@@ -330,11 +336,11 @@ public partial class MainViewModel : ObservableObject
         try
         {
             _coordinator.ChangeCaptureTarget(target);
-            StatusText = $"녹화 대상 변경: {SelectedCaptureMode}";
+            StatusText = string.Format(Strings.Info_TargetChanged, SelectedCaptureMode);
         }
         catch (Exception ex)
         {
-            StatusText = $"대상 변경 실패: {ex.Message}";
+            StatusText = string.Format(Strings.Error_TargetChange, ex.Message);
         }
     }
 
@@ -355,66 +361,27 @@ public partial class MainViewModel : ObservableObject
 
     private CaptureTarget? SelectRegion()
     {
-        var regionWindow = new RegionSelectWindow();
-        if (regionWindow.ShowDialog() == true && regionWindow.RegionSelected)
-        {
-            var region = regionWindow.SelectedRegion;
-            var monitors = WindowEnumerationService.GetMonitors();
+        // View delegate를 통해 영역 선택 다이얼로그 표시 (MVVM 패턴 준수)
+        var region = RegionSelectHandler?.Invoke();
+        if (region == null) return null;
 
-            // Find the monitor that contains the center of the selected region
-            var centerX = region.X + region.Width / 2;
-            var centerY = region.Y + region.Height / 2;
-            var monitor = monitors.FirstOrDefault(m => m.Bounds.Contains(centerX, centerY))
-                          ?? monitors.FirstOrDefault(m => m.IsPrimary)
-                          ?? monitors.First();
+        var r = region.Value;
+        var monitors = WindowEnumerationService.GetMonitors();
 
-            // Convert to monitor-relative coordinates
-            var relativeRegion = new Rect(
-                region.X - monitor.Bounds.X,
-                region.Y - monitor.Bounds.Y,
-                region.Width,
-                region.Height);
+        // Find the monitor that contains the center of the selected region
+        var centerX = r.X + r.Width / 2;
+        var centerY = r.Y + r.Height / 2;
+        var monitor = monitors.FirstOrDefault(m => m.Bounds.Contains(centerX, centerY))
+                      ?? monitors.FirstOrDefault(m => m.IsPrimary)
+                      ?? monitors.First();
 
-            return new RegionTarget(monitor.DeviceName, monitor.Bounds, relativeRegion);
-        }
-        return null;
-    }
+        // Convert to monitor-relative coordinates
+        var relativeRegion = new Rect(
+            r.X - monitor.Bounds.X,
+            r.Y - monitor.Bounds.Y,
+            r.Width,
+            r.Height);
 
-    private static string? FindFFmpeg()
-    {
-        // Check Assets folder
-        var assetsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "ffmpeg.exe");
-        if (File.Exists(assetsPath)) return assetsPath;
-
-        // Check app directory
-        var appPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe");
-        if (File.Exists(appPath)) return appPath;
-
-        // Check PATH (both user and machine scope)
-        foreach (var scope in new[] { EnvironmentVariableTarget.Process, EnvironmentVariableTarget.User, EnvironmentVariableTarget.Machine })
-        {
-            var pathDirs = Environment.GetEnvironmentVariable("PATH", scope)?.Split(';') ?? [];
-            foreach (var dir in pathDirs)
-            {
-                if (string.IsNullOrWhiteSpace(dir)) continue;
-                var fullPath = Path.Combine(dir.Trim(), "ffmpeg.exe");
-                if (File.Exists(fullPath)) return fullPath;
-            }
-        }
-
-        // Check winget install location
-        var wingetPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Microsoft", "WinGet", "Packages");
-        if (Directory.Exists(wingetPath))
-        {
-            foreach (var dir in Directory.GetDirectories(wingetPath, "Gyan.FFmpeg*"))
-            {
-                var binPath = Directory.GetFiles(dir, "ffmpeg.exe", SearchOption.AllDirectories).FirstOrDefault();
-                if (binPath != null) return binPath;
-            }
-        }
-
-        return null;
+        return new RegionTarget(monitor.DeviceName, monitor.Bounds, relativeRegion);
     }
 }

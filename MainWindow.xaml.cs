@@ -67,10 +67,23 @@ public partial class MainWindow : Window
             System.Windows.Application.Current.Shutdown();
         };
 
-        // Update tray and overlay when state changes
+        // Wire up View delegates for MVVM dialog separation
         if (DataContext is MainViewModel vm)
         {
             vm.PropertyChanged += OnViewModelPropertyChanged;
+            vm.RegionSelectHandler = () =>
+            {
+                var regionWindow = new RegionSelectWindow();
+                if (regionWindow.ShowDialog() == true && regionWindow.RegionSelected)
+                    return regionWindow.SelectedRegion;
+                return null;
+            };
+            vm.ShowCountdown = () =>
+            {
+                var countdown = new CountdownWindow();
+                countdown.ShowDialog();
+                return countdown.Completed;
+            };
         }
     }
 
