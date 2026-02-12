@@ -14,10 +14,10 @@ public sealed class FFmpegEncoderService : IDisposable
     public event Action<string>? EncodingFailed;
 
     public void StartVideoOnly(string ffmpegPath, string outputPath,
-        int width, int height, int fps, int crf = 23)
+        int width, int height, int fps, string encoderArgs)
     {
         var args = $"-y -f rawvideo -pix_fmt bgra -s {width}x{height} -r {fps} -i pipe:0 "
-                 + $"-c:v libx264 -preset veryfast -crf {crf} -pix_fmt yuv420p -an "
+                 + $"{encoderArgs} -an "
                  + $"\"{outputPath}\"";
 
         _ffmpegProcess = new Process

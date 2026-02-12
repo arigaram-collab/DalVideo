@@ -10,5 +10,5 @@ public class RecordingSettings
     public bool CaptureMicrophone { get; set; } = false;
     public string OutputDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
     public string FFmpegPath { get; set; } = "ffmpeg.exe";
-    public int Crf { get; set; } = 23;
+    public string EncoderArgs { get; set; } = "-c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p";
 }

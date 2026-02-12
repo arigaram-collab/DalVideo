@@ -54,6 +54,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _selectedQuality = "표준";
 
+    [ObservableProperty]
+    private string _selectedEncoder = "auto";
+
     // TODO: i18n - 캡처 모드/화질 문자열을 enum으로 변환하면 완전한 국제화 가능
     public ObservableCollection<string> CaptureModes { get; } =
     [
@@ -65,6 +68,8 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<int> FrameRates { get; } = [24, 30, 60];
 
     public ObservableCollection<string> QualityPresets { get; } = ["고품질", "표준", "소형"];
+
+    public ObservableCollection<HwEncoderService.EncoderInfo> AvailableEncoders { get; } = [];
 
     public ObservableCollection<WindowInfo> AvailableWindows { get; } = [];
 
@@ -111,7 +116,28 @@ public partial class MainViewModel : ObservableObject
         _frameRate = s.FrameRate;
         _selectedQuality = s.Quality;
         _useCountdown = s.UseCountdown;
+        _selectedEncoder = s.Encoder;
         _outputDirectory = s.OutputDirectory;
+
+        DetectEncoders();
+    }
+
+    private void DetectEncoders()
+    {
+        var ffmpegPath = FFmpegLocatorService.FindFFmpeg();
+        if (ffmpegPath == null)
+        {
+            AvailableEncoders.Add(HwEncoderService.AutoEncoder);
+            AvailableEncoders.Add(HwEncoderService.SoftwareEncoder);
+            return;
+        }
+
+        foreach (var encoder in HwEncoderService.DetectAvailable(ffmpegPath))
+            AvailableEncoders.Add(encoder);
+
+        // Validate saved encoder against available list
+        if (!AvailableEncoders.Any(e => e.Id == _selectedEncoder))
+            _selectedEncoder = "auto";
     }
 
     private void SaveSettings()
@@ -124,6 +150,7 @@ public partial class MainViewModel : ObservableObject
             FrameRate = FrameRate,
             Quality = SelectedQuality,
             UseCountdown = UseCountdown,
+            Encoder = SelectedEncoder,
             OutputDirectory = OutputDirectory
         });
     }
@@ -167,6 +194,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnFrameRateChanged(int value) => SaveSettings();
     partial void OnSelectedQualityChanged(string value) => SaveSettings();
     partial void OnUseCountdownChanged(bool value) => SaveSettings();
+    partial void OnSelectedEncoderChanged(string value) => SaveSettings();
     partial void OnOutputDirectoryChanged(string value) => SaveSettings();
 
     [RelayCommand]
@@ -248,6 +276,13 @@ public partial class MainViewModel : ObservableObject
             _ => 23
         };
 
+        // Resolve encoder: "auto" picks the best available GPU encoder
+        var encoderId = SelectedEncoder == "auto"
+            ? HwEncoderService.ResolveBest(AvailableEncoders.ToList())
+            : SelectedEncoder;
+        var encoderArgs = HwEncoderService.BuildEncoderArgs(encoderId, crf);
+        AppLogger.Info($"[Recording] Encoder: {encoderId}, Args: {encoderArgs}");
+
         var settings = new RecordingSettings
         {
             Target = target,
@@ -258,7 +293,7 @@ public partial class MainViewModel : ObservableObject
             CaptureMicrophone = CaptureMicrophone,
             OutputDirectory = OutputDirectory,
             FFmpegPath = ffmpegPath,
-            Crf = crf
+            EncoderArgs = encoderArgs
         };
 
         try

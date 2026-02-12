@@ -5,6 +5,7 @@ public class AppSettings
     private static readonly string[] ValidCaptureModes = ["전체 화면", "창 선택", "영역 선택"];
     private static readonly string[] ValidQualities = ["고품질", "표준", "소형"];
     private static readonly int[] ValidFrameRates = [24, 30, 60];
+    private static readonly string[] ValidEncoders = ["auto", "h264_nvenc", "h264_amf", "h264_qsv", "libx264"];
 
     public string CaptureMode { get; set; } = "전체 화면";
     public bool CaptureSystemAudio { get; set; } = true;
@@ -12,6 +13,7 @@ public class AppSettings
     public int FrameRate { get; set; } = 30;
     public string Quality { get; set; } = "표준";
     public bool UseCountdown { get; set; } = true;
+    public string Encoder { get; set; } = "auto";
     public string OutputDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
 
     /// <summary>
@@ -27,6 +29,9 @@ public class AppSettings
 
         if (!ValidFrameRates.Contains(FrameRate))
             FrameRate = 30;
+
+        if (!ValidEncoders.Contains(Encoder))
+            Encoder = "auto";
 
         if (string.IsNullOrWhiteSpace(OutputDirectory))
             OutputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);

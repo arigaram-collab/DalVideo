@@ -68,7 +68,7 @@ public sealed class RecordingCoordinator : IDisposable
             settings.CanvasWidth,
             settings.CanvasHeight,
             settings.FrameRate,
-            settings.Crf);
+            settings.EncoderArgs);
 
         // Start audio capture to WAV file
         if (_hasAudio)
