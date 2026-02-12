@@ -128,6 +128,11 @@
                               Margin="16,0,0,0" VerticalAlignment="Center"
                               AutomationProperties.Name="{x:Static props:Strings.Access_Cursor}"
                               ToolTip="{x:Static props:Strings.Tooltip_Cursor}"/>
+                    <CheckBox Content="{x:Static props:Strings.PreviewLabel}"
+                              IsChecked="{Binding ShowPreview}"
+                              Margin="16,0,0,0" VerticalAlignment="Center"
+                              AutomationProperties.Name="{x:Static props:Strings.Access_Preview}"
+                              ToolTip="{x:Static props:Strings.Tooltip_Preview}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                     <TextBlock Text="{x:Static props:Strings.EncoderLabel}" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>

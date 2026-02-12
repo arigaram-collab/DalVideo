@@ -15,6 +15,7 @@ public class AppSettings
     public bool UseCountdown { get; set; } = true;
     public string Encoder { get; set; } = "auto";
     public bool CaptureCursor { get; set; } = true;
+    public bool ShowPreview { get; set; }
     public string OutputDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
 
     /// <summary>

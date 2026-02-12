@@ -69,6 +69,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _captureCursor = true;
 
+    [ObservableProperty]
+    private bool _showPreview;
+
     // TODO: i18n - 캡처 모드/화질 문자열을 enum으로 변환하면 완전한 국제화 가능
     public ObservableCollection<string> CaptureModes { get; } =
     [
@@ -376,7 +379,7 @@ public partial class MainViewModel : ObservableObject
             FrameDropWarning = false;
             State = RecordingState.Idle;
 
-            if (previewPath != null)
+            if (previewPath != null && ShowPreview)
                 ShowPreviewHandler?.Invoke(previewPath);
             return;
         }
@@ -468,6 +471,7 @@ public partial class MainViewModel : ObservableObject
         UseCountdown = defaults.UseCountdown;
         SelectedEncoder = defaults.Encoder;
         CaptureCursor = defaults.CaptureCursor;
+        ShowPreview = defaults.ShowPreview;
         OutputDirectory = defaults.OutputDirectory;
     }
 
