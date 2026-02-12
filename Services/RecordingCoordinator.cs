@@ -31,6 +31,7 @@ public sealed class RecordingCoordinator : IDisposable
 
     public RecordingState State { get; private set; } = RecordingState.Idle;
     public string? LastOutputPath { get; private set; }
+    public float AudioPeakLevel => _hasAudio ? _audioCapture.PeakLevel : 0f;
 
     /// <summary>녹화 중 치명적 오류 발생 시 알림 (에러 메시지)</summary>
     public event Action<string>? RecordingError;

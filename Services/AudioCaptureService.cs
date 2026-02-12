@@ -22,6 +22,9 @@ public sealed class AudioCaptureService : IDisposable
 
     public WaveFormat OutputFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
 
+    /// <summary>믹스된 오디오의 피크 레벨 (0.0~1.0). UI 레벨 미터용.</summary>
+    public float PeakLevel;
+
     /// <summary>오디오 버퍼 오버플로 발생 시 알림</summary>
     public event Action<string>? BufferOverflow;
 
@@ -161,6 +164,7 @@ public sealed class AudioCaptureService : IDisposable
             if (chunksWritten < expectedChunks)
             {
                 MixOneChunk(outputBuffer, tempBuffer);
+                PeakLevel = ComputePeak(outputBuffer, chunkBytes);
                 try
                 {
                     _waveWriter?.Write(outputBuffer, 0, chunkBytes);
@@ -284,6 +288,22 @@ public sealed class AudioCaptureService : IDisposable
         }
     }
 
+    private static unsafe float ComputePeak(byte[] buffer, int byteCount)
+    {
+        float peak = 0;
+        int sampleCount = byteCount / 4;
+        fixed (byte* p = buffer)
+        {
+            var samples = (float*)p;
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float abs = Math.Abs(samples[i]);
+                if (abs > peak) peak = abs;
+            }
+        }
+        return Math.Min(peak, 1f);
+    }
+
     public void PauseCapture()
     {
         _isPaused = true;
@@ -307,6 +327,7 @@ public sealed class AudioCaptureService : IDisposable
         _micCapture?.StopRecording();
 
         _isCapturing = false;
+        PeakLevel = 0;
         _mixThread?.Join(timeout: TimeSpan.FromSeconds(5));
 
         _waveWriter?.Flush();

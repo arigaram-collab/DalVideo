@@ -28,6 +28,9 @@ public partial class MainViewModel : ObservableObject
     private string _elapsedTimeText = "00:00:00";
 
     [ObservableProperty]
+    private double _audioLevel;
+
+    [ObservableProperty]
     private string _selectedCaptureMode = "전체 화면";
 
     [ObservableProperty]
@@ -85,6 +88,7 @@ public partial class MainViewModel : ObservableObject
         _timer.Tick += (_, _) =>
         {
             ElapsedTimeText = _elapsedStopwatch.Elapsed.ToString(@"hh\:mm\:ss");
+            AudioLevel = _coordinator.AudioPeakLevel;
         };
 
         _windowRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -337,6 +341,7 @@ public partial class MainViewModel : ObservableObject
         }
         finally
         {
+            AudioLevel = 0;
             State = RecordingState.Idle;
         }
     }

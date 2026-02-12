@@ -71,20 +71,27 @@
 
         <!-- 오디오 설정 -->
         <GroupBox Grid.Row="1" Header="{x:Static props:Strings.AudioHeader}" Padding="8" Margin="0,0,0,6">
-            <StackPanel Orientation="Horizontal">
-                <CheckBox Content="{x:Static props:Strings.SystemAudioLabel}"
-                          IsChecked="{Binding CaptureSystemAudio}"
-                          IsEnabled="{Binding IsIdle}"
-                          Margin="0,0,20,0"
-                          TabIndex="2"
-                          AutomationProperties.Name="{x:Static props:Strings.Access_SystemAudio}"
-                          ToolTip="{x:Static props:Strings.Tooltip_SystemAudio}"/>
-                <CheckBox Content="{x:Static props:Strings.MicrophoneLabel}"
-                          IsChecked="{Binding CaptureMicrophone}"
-                          IsEnabled="{Binding IsIdle}"
-                          TabIndex="3"
-                          AutomationProperties.Name="{x:Static props:Strings.Access_Microphone}"
-                          ToolTip="{x:Static props:Strings.Tooltip_Microphone}"/>
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox Content="{x:Static props:Strings.SystemAudioLabel}"
+                              IsChecked="{Binding CaptureSystemAudio}"
+                              IsEnabled="{Binding IsIdle}"
+                              Margin="0,0,20,0"
+                              TabIndex="2"
+                              AutomationProperties.Name="{x:Static props:Strings.Access_SystemAudio}"
+                              ToolTip="{x:Static props:Strings.Tooltip_SystemAudio}"/>
+                    <CheckBox Content="{x:Static props:Strings.MicrophoneLabel}"
+                              IsChecked="{Binding CaptureMicrophone}"
+                              IsEnabled="{Binding IsIdle}"
+                              TabIndex="3"
+                              AutomationProperties.Name="{x:Static props:Strings.Access_Microphone}"
+                              ToolTip="{x:Static props:Strings.Tooltip_Microphone}"/>
+                </StackPanel>
+                <!-- 오디오 레벨 미터 -->
+                <ProgressBar Minimum="0" Maximum="1" Value="{Binding AudioLevel, Mode=OneWay}"
+                             Height="6" Margin="0,6,0,0"
+                             Foreground="#FF4CAF50" Background="#33FFFFFF"
+                             Visibility="{Binding IsRecordingOrPaused, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
         </GroupBox>
 
