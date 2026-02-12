@@ -120,13 +120,28 @@ public sealed class ScreenCaptureService : IDisposable
                 int bytesPerRow = width * 4;
                 var buffer = new byte[bytesPerRow * height];
 
-                for (int row = 0; row < height; row++)
+                unsafe
                 {
-                    Marshal.Copy(
-                        dataBox.DataPointer + row * dataBox.RowPitch,
-                        buffer,
-                        row * bytesPerRow,
-                        bytesPerRow);
+                    fixed (byte* pDest = buffer)
+                    {
+                        byte* pSrc = (byte*)dataBox.DataPointer;
+                        if (dataBox.RowPitch == bytesPerRow)
+                        {
+                            // Pitch matches width: single bulk copy
+                            System.Buffer.MemoryCopy(pSrc, pDest, buffer.Length, buffer.Length);
+                        }
+                        else
+                        {
+                            // Pitch differs: row-by-row copy
+                            for (int row = 0; row < height; row++)
+                            {
+                                System.Buffer.MemoryCopy(
+                                    pSrc + row * dataBox.RowPitch,
+                                    pDest + row * bytesPerRow,
+                                    bytesPerRow, bytesPerRow);
+                            }
+                        }
+                    }
                 }
 
                 FrameArrived?.Invoke(buffer, width, height);

@@ -15,7 +15,10 @@ public sealed class RecordingCoordinator : IDisposable
     private Stopwatch? _fpsStopwatch;
     private long _frameCount;
     private byte[]? _lastFrame;
-    private byte[]? _canvasBuffer;
+    private byte[]? _canvasBuffer;       // black screen default
+    private byte[]? _scaleOutputBuffer;  // reusable ScaleToCanvas output
+    private byte[]? _pumpFrameBuffer;    // reusable FramePumpLoop copy
+    private byte[]? _cropBuffer;         // reusable crop buffer (grows as needed)
     private readonly object _frameLock = new();
     private CaptureTarget? _currentTarget;
     private Rect _monitorBounds;
@@ -35,7 +38,11 @@ public sealed class RecordingCoordinator : IDisposable
     {
         _settings = settings;
         _currentTarget = settings.Target;
-        _canvasBuffer = new byte[settings.CanvasWidth * settings.CanvasHeight * 4];
+        int canvasSize = settings.CanvasWidth * settings.CanvasHeight * 4;
+        _canvasBuffer = new byte[canvasSize];
+        _scaleOutputBuffer = new byte[canvasSize];
+        _pumpFrameBuffer = new byte[canvasSize];
+        _cropBuffer = null;
         _frameCount = 0;
         _fpsStopwatch = Stopwatch.StartNew();
 
@@ -175,9 +182,10 @@ public sealed class RecordingCoordinator : IDisposable
 
         lock (_frameLock)
         {
-            _lastFrame = ScaleToCanvas(frameData, width, height,
+            ScaleToCanvas(frameData, width, height,
                 _settings!.CanvasWidth, _settings.CanvasHeight,
-                cropRegion);
+                cropRegion, _scaleOutputBuffer!);
+            _lastFrame = _scaleOutputBuffer;
         }
     }
 
@@ -199,8 +207,8 @@ public sealed class RecordingCoordinator : IDisposable
                         var src = _lastFrame ?? _canvasBuffer;
                         if (src != null)
                         {
-                            frameToWrite = new byte[src.Length];
-                            Buffer.BlockCopy(src, 0, frameToWrite, 0, src.Length);
+                            Buffer.BlockCopy(src, 0, _pumpFrameBuffer!, 0, _pumpFrameBuffer!.Length);
+                            frameToWrite = _pumpFrameBuffer;
                         }
                         else
                         {
@@ -228,10 +236,10 @@ public sealed class RecordingCoordinator : IDisposable
         }
     }
 
-    private static byte[] ScaleToCanvas(byte[] source, int srcWidth, int srcHeight,
-        int canvasWidth, int canvasHeight, Rect? cropRegion)
+    private void ScaleToCanvas(byte[] source, int srcWidth, int srcHeight,
+        int canvasWidth, int canvasHeight, Rect? cropRegion, byte[] dest)
     {
-        // If crop region specified, crop first
+        // Crop phase: extract sub-rectangle using reusable buffer
         if (cropRegion != null)
         {
             var region = cropRegion.Value;
@@ -242,25 +250,32 @@ public sealed class RecordingCoordinator : IDisposable
 
             if (rw > 0 && rh > 0)
             {
-                var cropped = new byte[rw * rh * 4];
+                int cropSize = rw * rh * 4;
+                if (_cropBuffer == null || _cropBuffer.Length < cropSize)
+                    _cropBuffer = new byte[cropSize];
+
                 for (int row = 0; row < rh; row++)
                 {
                     Buffer.BlockCopy(source, ((ry + row) * srcWidth + rx) * 4,
-                                     cropped, row * rw * 4, rw * 4);
+                                     _cropBuffer, row * rw * 4, rw * 4);
                 }
-                source = cropped;
+                source = _cropBuffer;
                 srcWidth = rw;
                 srcHeight = rh;
             }
         }
 
-        // If source matches canvas, return as-is
+        // If source matches canvas, direct copy (no scaling needed)
         if (srcWidth == canvasWidth && srcHeight == canvasHeight)
-            return source;
+        {
+            Buffer.BlockCopy(source, 0, dest, 0, canvasWidth * canvasHeight * 4);
+            return;
+        }
 
-        // Scale source to fit canvas (maintain aspect ratio, center with black bars)
-        var canvas = new byte[canvasWidth * canvasHeight * 4];
+        // Clear canvas to black
+        Array.Clear(dest);
 
+        // Calculate scaling parameters
         double scaleX = (double)canvasWidth / srcWidth;
         double scaleY = (double)canvasHeight / srcHeight;
         double scale = Math.Min(scaleX, scaleY);
@@ -270,28 +285,25 @@ public sealed class RecordingCoordinator : IDisposable
         int offsetX = (canvasWidth - scaledWidth) / 2;
         int offsetY = (canvasHeight - scaledHeight) / 2;
 
-        // Nearest-neighbor scaling for performance
-        for (int y = 0; y < scaledHeight; y++)
+        // Nearest-neighbor scaling with integer math + unsafe 4-byte pointer copy
+        unsafe
         {
-            int srcY = (int)(y / scale);
-            if (srcY >= srcHeight) srcY = srcHeight - 1;
-
-            for (int x = 0; x < scaledWidth; x++)
+            fixed (byte* pSrc = source, pDst = dest)
             {
-                int srcX = (int)(x / scale);
-                if (srcX >= srcWidth) srcX = srcWidth - 1;
+                for (int y = 0; y < scaledHeight; y++)
+                {
+                    int srcY = Math.Min(y * srcHeight / scaledHeight, srcHeight - 1);
+                    int* srcRow = (int*)(pSrc + srcY * srcWidth * 4);
+                    int* dstRow = (int*)(pDst + ((offsetY + y) * canvasWidth + offsetX) * 4);
 
-                int srcIdx = (srcY * srcWidth + srcX) * 4;
-                int dstIdx = ((offsetY + y) * canvasWidth + (offsetX + x)) * 4;
-
-                canvas[dstIdx] = source[srcIdx];
-                canvas[dstIdx + 1] = source[srcIdx + 1];
-                canvas[dstIdx + 2] = source[srcIdx + 2];
-                canvas[dstIdx + 3] = source[srcIdx + 3];
+                    for (int x = 0; x < scaledWidth; x++)
+                    {
+                        int srcX = Math.Min(x * srcWidth / scaledWidth, srcWidth - 1);
+                        dstRow[x] = srcRow[srcX];
+                    }
+                }
             }
         }
-
-        return canvas;
     }
 
     private static void TryDeleteFile(string path)
